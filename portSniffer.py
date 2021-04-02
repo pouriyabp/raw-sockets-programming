@@ -11,7 +11,7 @@ import time
 
 server = "www.google.com"
 portRangeDown = 1
-portRangeUp = 10
+portRangeUp = 100
 timeout = 1
 threadsNumber = 2
 # for save result to show
@@ -74,8 +74,10 @@ def fillTargetsPort(arry):
 
 
 def start():
+    x=time.time()
     fillTargetsPort(targetPorts)
     time.sleep(0.01)
+
     startThread(server, targetPorts, timeout, threadsNumber, output)
     print(targetPorts)
 
@@ -83,6 +85,8 @@ def start():
         x=len(output)
         time.sleep(0.01)
         continue
+    y=time.time()
+    print(f"x is {x} and y is {y} and x-y is {y-x}")
     print(output)
 
 start()
