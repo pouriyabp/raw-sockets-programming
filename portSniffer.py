@@ -53,12 +53,14 @@ def checkPort(ip, port, timeout, output):
 
 def threader(ip, targetports, timeout, threadsN, output):
     i = 0
+    tCount=0
     while i<len(targetports):
         x=threading.activeCount()
-        while threading.activeCount() < threadsN and i < len(targetports):
+        while tCount < threadsN and i < len(targetports):
             t = threading.Thread(target=checkPort, args=(ip, targetports[i], timeout, output))
             t.daemon=True
             t.start()
+            tCount+=1
             i += 1
         time.sleep(0.01)
 
