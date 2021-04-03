@@ -1,7 +1,7 @@
 import socket
 import threading
 import time
-
+from queue import Queue
 #
 # server=str(input("Enter host name: "))
 # portRangeDown=int(input("Enter port number start from: "))
@@ -13,11 +13,12 @@ server = "www.google.com"
 portRangeDown = 1
 portRangeUp = 100
 timeout = 1
-threadsNumber = 2
+threadsNumber = 10
 # for save result to show
 output = {}
 # for choose ports that we want to check
 targetPorts = []
+queue=Queue()
 
 printLock=threading.Lock()
 
@@ -51,28 +52,25 @@ def checkPort(ip, port, timeout, output):
         return False
 
 
-def threader(ip, targetports, timeout, threadsN, output):
-    i = 0
-    tCount=0
-    while i<len(targetports):
-        x=threading.activeCount()
-        while tCount < threadsN and i < len(targetports):
-            t = threading.Thread(target=checkPort, args=(ip, targetports[i], timeout, output))
-            t.daemon=True
-            t.start()
-            tCount+=1
-            i += 1
-        time.sleep(0.01)
+def threader(ip, queue, timeout,  output):
+    while True:
+        CPort=queue.get()
+        checkPort(ip,CPort,timeout,output)
+        queue.task_done()
 
 
-def startThread(ip, targetports, timeout, threadsN, output):
-    thread = threading.Thread(target=threader, args=(ip, targetports, timeout, threadsN, output))
-    thread.start()
+
+def startThread(ip, queue, timeout, threadsN, output):
+    for x in range(threadsN):
+        t = threading.Thread(target=threader,args=(ip,queue,timeout,output))
+        t.daemon = True
+        t.start()
 
 
 def fillTargetsPort(arry):
     for p in range(portRangeDown, portRangeUp):
         arry.append(p)
+        queue.put(p)
 
 
 def start():
@@ -80,7 +78,7 @@ def start():
     fillTargetsPort(targetPorts)
     time.sleep(0.01)
 
-    startThread(server, targetPorts, timeout, threadsNumber, output)
+    startThread(server, queue, timeout, threadsNumber, output)
     print(targetPorts)
 
     while len(output)<len(targetPorts):
