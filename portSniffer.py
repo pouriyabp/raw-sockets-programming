@@ -120,38 +120,53 @@ def fillQueue(queue, arr):
     for num in arr:
         queue.put(num)
 
+
 def getServer():
     server = str(input("Enter host name: "))
     return server
+
+
 def getMode():
-    mode=int(input("Enter mode -----> for porseman choose 1, for top 50 choose 2, for top 100 choose 3, for top 1000 choose 4, for choose rang choose 5: "))
-    while mode!=1 and mode!=2 and mode!=3 and mode!=4 and mode!=5:
-        mode=int(input(f"Enter mode again(you choose {mode}):(for porseman choose 1, for top 50 choose 2, for top 100 choose 3, for top 1000 choose 4, for choose rang choose 5) "))
+    mode = int(input(
+        "Enter mode -----> for porseman choose 1, for top 50 choose 2, for top 100 choose 3, for top 1000 choose 4, for choose rang choose 5: "))
+    while mode != 1 and mode != 2 and mode != 3 and mode != 4 and mode != 5:
+        mode = int(input(
+            f"Enter mode again(you choose {mode}):(for porseman choose 1, for top 50 choose 2, for top 100 choose 3, for top 1000 choose 4, for choose rang choose 5) "))
     return mode
+
+
 def getPortRangeDown():
     portRangeDown = int(input("Enter port number start from: "))
     return portRangeDown
+
+
 def getPortRangeUp():
     portRangeUp = int(input("Enter port number to end in: "))
     return portRangeUp
+
+
 def getTimeout():
     timeout = int(input("Enter timeout for scanning: "))
     return timeout
+
+
 def getThreadsNumber():
-    threadsNumber=int(input("Enter threads number: "))
+    threadsNumber = int(input("Enter threads number: "))
     return threadsNumber
-def printResult(targetArry,outputDict):
-    print(60*'*')
+
+
+def printResult(targetArry, outputDict):
+    print(60 * '*')
     for port in targetArry:
-        if outputDict[port]=='open':
+        if outputDict[port] == 'open':
             print(f"port {port} : OPEN")
     print(60 * '*')
+
 
 def start():
     #
     # variables:
     server = getServer()
-
 
     # for save result to show
     output = {}
@@ -161,26 +176,23 @@ def start():
 
     printLock = threading.Lock()
 
-    #get check mode
-    choose=getMode()
-    if choose==1:
-        targetPorts=porseman
-    elif choose==2:
-        targetPorts=top50FamousPorts
-    elif choose==3:
-        targetPorts=top100FamousPorts
-    elif choose==4:
-        targetPorts=top1000FamousPorts
-    elif choose==5:
-        portRangeUp=getPortRangeUp()
-        portRangeDown=getPortRangeDown()
+    # get check mode
+    choose = getMode()
+    if choose == 1:
+        targetPorts = porseman
+    elif choose == 2:
+        targetPorts = top50FamousPorts
+    elif choose == 3:
+        targetPorts = top100FamousPorts
+    elif choose == 4:
+        targetPorts = top1000FamousPorts
+    elif choose == 5:
+        portRangeUp = getPortRangeUp()
+        portRangeDown = getPortRangeDown()
         fillTargetsPort(targetPorts, portRangeDown, portRangeUp)
 
-
-
-    timeout=getTimeout()
-    threadsNumber=getThreadsNumber()
-
+    timeout = getTimeout()
+    threadsNumber = getThreadsNumber()
 
     # server = "www.google.com"
     # portRangeDown = 1
@@ -188,14 +200,11 @@ def start():
     # timeout = 1
     # threadsNumber = 10
 
-
-
-
     # ------------------------------------------------------------------------------------------------------------------
     if 'http://' in server or 'https://' in server:
         server = server[server.find('://') + 3:]
 
-    x = time.time()
+    startTime = time.time()
 
     fillQueue(queue, targetPorts)
     time.sleep(0.01)
@@ -204,13 +213,12 @@ def start():
     print(targetPorts)
 
     while len(output) < len(targetPorts):
-        x = len(output)
         time.sleep(0.01)
         continue
-    y = time.time()
-    print(f"start time is {x} and end time is {y} and x-y is {y - x}")
+    endTime = time.time()
+    print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
     print(output)
-    printResult(targetPorts,output)
+    printResult(targetPorts, output)
 
 
 start()
