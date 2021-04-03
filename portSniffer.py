@@ -2,28 +2,10 @@ import socket
 import threading
 import time
 from queue import Queue
-#
-# server=str(input("Enter host name: "))
-# portRangeDown=int(input("Enter port number start from: "))
-# portRangeUp=int(input("Enter port number to end in: "))
-# timeout=int(input("Enter timeout for scanning: "))
-# threadsNumber=int(input("Enter threads number: "))
 
-server = "www.google.com"
-portRangeDown = 1
-portRangeUp = 100
-timeout = 1
-threadsNumber = 10
-# for save result to show
-output = {}
-# for choose ports that we want to check
-targetPorts = []
-queue=Queue()
-
-printLock=threading.Lock()
 
 # check port is open or not
-def checkPort(ip, port, timeout, output):
+def checkPort(ip, port, timeout, output,printLock):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(timeout)
     try:
@@ -52,33 +34,58 @@ def checkPort(ip, port, timeout, output):
         return False
 
 
-def threader(ip, queue, timeout,  output):
+def threader(ip, queue, timeout,  output,printLock):
     while True:
         CPort=queue.get()
-        checkPort(ip,CPort,timeout,output)
+        checkPort(ip,CPort,timeout,output,printLock)
         queue.task_done()
 
 
 
-def startThread(ip, queue, timeout, threadsN, output):
+def startThread(ip, queue, timeout, threadsN, output,printLock):
     for x in range(threadsN):
-        t = threading.Thread(target=threader,args=(ip,queue,timeout,output))
+        t = threading.Thread(target=threader,args=(ip,queue,timeout,output,printLock))
         t.daemon = True
         t.start()
 
 
-def fillTargetsPort(arry):
-    for p in range(portRangeDown, portRangeUp):
+def fillTargetsPort(queue,arry,rangeDown,rangeUp):
+    for p in range(rangeDown, rangeUp):
         arry.append(p)
         queue.put(p)
 
 
 def start():
+    #
+    # server=str(input("Enter host name: "))
+    # portRangeDown=int(input("Enter port number start from: "))
+    # portRangeUp=int(input("Enter port number to end in: "))
+    # timeout=int(input("Enter timeout for scanning: "))
+    # threadsNumber=int(input("Enter threads number: "))
+
+    server = "www.google.com"
+    portRangeDown = 1
+    portRangeUp = 100
+    timeout = 1
+    threadsNumber = 10
+    # for save result to show
+    output = {}
+    # for choose ports that we want to check
+    targetPorts = []
+    queue = Queue()
+
+    printLock = threading.Lock()
+
+
+#--------------------------------------------------------------------------------------------------------
+    if 'http://' in server or 'https://' in server:
+        server = server[server.find('://') + 3:]
+
     x=time.time()
-    fillTargetsPort(targetPorts)
+    fillTargetsPort(queue,targetPorts,portRangeDown,portRangeUp)
     time.sleep(0.01)
 
-    startThread(server, queue, timeout, threadsNumber, output)
+    startThread(server, queue, timeout, threadsNumber, output,printLock)
     print(targetPorts)
 
     while len(output)<len(targetPorts):
