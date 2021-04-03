@@ -140,6 +140,12 @@ def getTimeout():
 def getThreadsNumber():
     threadsNumber=int(input("Enter threads number: "))
     return threadsNumber
+def printResult(targetArry,outputDict):
+    print(60*'*')
+    for port in targetArry:
+        if outputDict[port]=='open':
+            print(f"port {port} : OPEN")
+    print(60 * '*')
 
 def start():
     #
@@ -202,8 +208,9 @@ def start():
         time.sleep(0.01)
         continue
     y = time.time()
-    print(f"x is {x} and y is {y} and x-y is {y - x}")
+    print(f"start time is {x} and end time is {y} and x-y is {y - x}")
     print(output)
+    printResult(targetPorts,output)
 
 
 start()
