@@ -92,9 +92,9 @@ def checkPort(ip, port, output, printLock, timeout=None):
     except socket.error as e:
         print(e)
         s.close()
-        output[port] = "close"
+        output[port] = "unknown"
         with printLock:
-            print(f"port {port} is close!")
+            print(f"port {port} is unknown!")
         return False
 
 
