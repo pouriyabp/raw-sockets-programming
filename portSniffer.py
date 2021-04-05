@@ -4,6 +4,7 @@ import time
 from queue import Queue
 
 porseman = [80, 443, 25, 465, 587, 21, 23, 22]
+porsemanDict={'HTTP':80, 'HTTPS':443, 'SMTP':25, 'FTP': 21, 'TELNET':23, 'SSH': 22}
 top50FamousPorts = [21, 22, 25, 53, 80, 110, 113, 135, 139, 143, 179, 199, 443, 445, 465, 514, 548, 554, 587, 646, 993,
                     995, 1025, 1026, 1433, 1720, 1723, 2000, 3306, 3389, 5060, 5666, 5900, 6001, 8000, 8008, 8080, 8443,
                     8888, 10000, 32768, 49152, 49154]
@@ -68,7 +69,7 @@ top1000FamousPorts = [1, 3, 6, 9, 13, 17, 19, 20, 21, 22, 23, 24, 25, 30, 32, 37
 
 
 # check port is open or not
-def checkPort(ip, port, timeout, output, printLock):
+def checkPort(ip, port,output, printLock, timeout=None ):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(timeout)
     try:
@@ -97,16 +98,16 @@ def checkPort(ip, port, timeout, output, printLock):
         return False
 
 
-def threader(ip, queue, timeout, output, printLock):
+def threader(ip, queue,  output, printLock,timeout=None):
     while True:
         CPort = queue.get()
-        checkPort(ip, CPort, timeout, output, printLock)
+        checkPort(ip, CPort,  output, printLock,timeout)
         queue.task_done()
 
 
-def startThread(ip, queue, timeout, threadsN, output, printLock):
+def startThread(ip, queue,   output, printLock,threadsN=1,timeout=None):
     for x in range(threadsN):
-        t = threading.Thread(target=threader, args=(ip, queue, timeout, output, printLock))
+        t = threading.Thread(target=threader, args=(ip, queue,  output, printLock,timeout))
         t.daemon = True
         t.start()
 
@@ -209,7 +210,7 @@ def start():
     fillQueue(queue, targetPorts)
     time.sleep(0.01)
 
-    startThread(server, queue, timeout, threadsNumber, output, printLock)
+    startThread(server, queue,  output, printLock, threadsNumber,timeout)
     print(targetPorts)
 
     while len(output) < len(targetPorts):
@@ -221,4 +222,4 @@ def start():
     printResult(targetPorts, output)
 
 
-start()
+
