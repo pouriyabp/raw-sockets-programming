@@ -192,8 +192,8 @@ def start():
     elif choose == 4:
         targetPorts = top1000FamousPorts
     elif choose == 5:
-        portRangeUp = getPortRangeUp()
         portRangeDown = getPortRangeDown()
+        portRangeUp = getPortRangeUp()
         fillTargetsPort(targetPorts, portRangeDown, portRangeUp)
 
     timeout = getTimeout()
