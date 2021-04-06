@@ -168,11 +168,20 @@ def printResult(targetArry, outputDict):
     print(60 * '*')
 
 
+def checkHostname(server):
+    try:
+        server_ip = socket.gethostbyname(server)
+        return server_ip
+    except socket.error as e:
+        print(e)
+        return None
+
+
 def start():
     #
     # variables:
     server = getServer()
-
+    serverIp = None
     # for save result to show
     output = {}
     # for choose ports that we want to check
@@ -212,6 +221,11 @@ def start():
     # ------------------------------------------------------------------------------------------------------------------
     if 'http://' in server or 'https://' in server:
         server = server[server.find('://') + 3:]
+    serverIp = checkHostname(server)
+    if serverIp == None:
+        print(f"server {server} is unknown!")
+    else:
+        print(f"server ip is {serverIp}")
 
     startTime = time.time()
 
