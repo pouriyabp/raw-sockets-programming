@@ -285,7 +285,7 @@ def main():
     threadsNumber = args.threadsNumber
     if args.threadsNumber is None:
         threadsNumber = 1
-    if args.threadsNumber > 1000:
+    elif args.threadsNumber > 1000:
         threadsNumber = 1000
 
     if args.top50ports:
