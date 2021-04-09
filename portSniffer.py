@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 from queue import Queue
+import argparse
 
 porseman = [80, 443, 25, 465, 587, 21, 23, 22]
 porsemanDict = {'HTTP': 80, 'HTTPS': 443, 'SMTP': 25, 'FTP': 21, 'TELNET': 23, 'SSH': 22}
@@ -167,7 +168,8 @@ def printResult(targetArry, outputDict):
             print(f"port {port} : OPEN")
     print(60 * '*')
 
-#get server ip address
+
+# get server ip address
 def checkHostname(server):
     try:
         server_ip = socket.gethostbyname(server)
@@ -175,6 +177,12 @@ def checkHostname(server):
     except socket.error as e:
         print(e)
         return None
+
+
+def fixServer(server):
+    if 'http://' in server or 'https://' in server:
+        server = server[server.find('://') + 3:]
+    return server
 
 
 def start():
@@ -219,8 +227,7 @@ def start():
     # threadsNumber = 10
 
     # ------------------------------------------------------------------------------------------------------------------
-    if 'http://' in server or 'https://' in server:
-        server = server[server.find('://') + 3:]
+    server = fixServer(server)
     serverIp = checkHostname(server)
     if serverIp == None:
         print(f"server {server} is unknown!")
@@ -245,4 +252,85 @@ def start():
     printResult(targetPorts, output)
 
 
-start()
+# start()
+
+def main():
+    output = {}
+    serverIp = None
+    queue = Queue()
+    printLock = threading.Lock()
+
+    server = None
+    timeout = None
+    threadsNumber = None
+    targetPorts = []
+    portRangeDown = None
+    portRangeUp = None
+
+    parser = argparse.ArgumentParser(description=" *check ports* ")
+    parser.add_argument("Server", help="The server or host that you want to check ports.", type=str)
+    parser.add_argument("-t", "--timeout", help="timeout for each port.", type=int)
+    parser.add_argument("-n", "--threadsNumber", help="number of threads.", type=int)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-p50", "--top50ports", help="top 50 famous ports.", action="store_true")
+    group.add_argument("-p100", "--top100ports", help="top 100 famous ports.", action="store_true")
+    group.add_argument("-p1000", "--top1000ports", help="top 1000 famous ports.", action="store_true")
+    group.add_argument("-r", "--range", help="specific range. (use it like ---> 'num'-'num')", type=str)
+    group.add_argument("-q", "--specialport", help="special port like http,https,ssh,... .", type=str)
+    args = parser.parse_args()
+
+    # print(args.range)
+    server = args.Server
+    timeout = args.timeout
+    if args.threadsNumber == None:
+        threadsNumber = 1
+
+    if args.top50ports == True:
+        # print(top50FamousPorts)
+        targetPorts = top50FamousPorts
+    elif args.top100ports == True:
+        # print(top100FamousPorts)
+        targetPorts = top100FamousPorts
+    elif args.top1000ports == True:
+        # print(top1000FamousPorts)
+        targetPorts = top1000FamousPorts
+    elif args.range:
+        tempUp = args.range
+        tempDn = args.range
+        portRangeDown = int(tempDn[:tempDn.find('-')])
+        portRangeUp = int(tempUp[tempUp.find('-') + 1:])
+        fillTargetsPort(targetPorts, portRangeDown, portRangeUp)
+    elif args.specialport:
+        temp = porsemanDict[args.specialport.upper()]
+        targetPorts.append(temp)
+    else:
+        targetPorts = porseman
+    print(
+        f"server is {server}, timeout is {timeout}, threads number is {threadsNumber},portDn = {portRangeDown}, portUp = {portRangeUp},targe port is {targetPorts}")
+
+    # ------------------------------------------------------------------------------------------------------------------
+    server = fixServer(server)
+    serverIp = checkHostname(server)
+    if serverIp == None:
+        print(f"server {server} is unknown!")
+        exit()
+    else:
+        print(f"server ip is {serverIp}")
+
+    startTime = time.time()
+
+    fillQueue(queue, targetPorts)
+    time.sleep(0.01)
+
+    startThread(server, queue, output, printLock, threadsNumber, timeout)
+    print(targetPorts)
+
+    while len(output) < len(targetPorts):
+        time.sleep(0.01)
+        continue
+    endTime = time.time()
+    print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
+    print(output)
+    printResult(targetPorts, output)
+
+main()
