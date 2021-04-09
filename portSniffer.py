@@ -282,10 +282,9 @@ def main():
     # print(args.range)
     server = args.Server
     timeout = args.timeout
-    threadsNumber=args.threadsNumber
+    threadsNumber = args.threadsNumber
     if args.threadsNumber is None:
         threadsNumber = 1
-
 
     if args.top50ports:
         # print(top50FamousPorts)
@@ -314,7 +313,7 @@ def main():
     # ------------------------------------------------------------------------------------------------------------------
     server = fixServer(server)
     serverIp = checkHostname(server)
-    if serverIp == None:
+    if serverIp is None:
         print(f"server {server} is unknown!")
         exit()
     else:
@@ -334,8 +333,23 @@ def main():
     endTime = time.time()
     print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
     print(output)
-    printResult(targetPorts, output)
+    #printResult(targetPorts, output)
 
+    if len(targetPorts)>1:
+        printResult(targetPorts, output)
+    else:
+        res=False
+        for key, value in porsemanDict.items():
+            if targetPorts[0] == value:
+                print(60 *'*')
+                print(f"port {value} ({key}) is {output[value]}")
+                print(60 * '*')
+                res=True
+                break
+        if res == False:
+            print(60 * '*')
+            print(f"port {targetPorts[0]}  is {output[targetPorts[0]]}")
+            print(60 * '*')
 
 if __name__ == "__main__":
     main()
