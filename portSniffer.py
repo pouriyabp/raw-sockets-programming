@@ -268,7 +268,7 @@ def main():
     portRangeUp = None
 
     parser = argparse.ArgumentParser(description=" *check ports* ")
-    parser.add_argument("Server", help="The server or host that you want to check ports.", type=str)
+    parser.add_argument("server", help="The server or host that you want to check ports.", type=str)
     parser.add_argument("-t", "--timeout", help="timeout for each port.", type=int)
     parser.add_argument("-n", "--threadsNumber", help="number of threads.", type=int)
     group = parser.add_mutually_exclusive_group()
@@ -280,7 +280,7 @@ def main():
     args = parser.parse_args()
 
     # print(args.range)
-    server = args.Server
+    server = args.server
     timeout = args.timeout
     threadsNumber = args.threadsNumber
     if args.threadsNumber is None:
