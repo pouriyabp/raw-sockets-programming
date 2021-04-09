@@ -285,6 +285,8 @@ def main():
     threadsNumber = args.threadsNumber
     if args.threadsNumber is None:
         threadsNumber = 1
+    if args.threadsNumber > 1000:
+        threadsNumber = 1000
 
     if args.top50ports:
         # print(top50FamousPorts)
@@ -333,23 +335,24 @@ def main():
     endTime = time.time()
     print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
     print(output)
-    #printResult(targetPorts, output)
+    # printResult(targetPorts, output)
 
-    if len(targetPorts)>1:
+    if len(targetPorts) > 1:
         printResult(targetPorts, output)
     else:
-        res=False
+        res = False
         for key, value in porsemanDict.items():
             if targetPorts[0] == value:
-                print(60 *'*')
+                print(60 * '*')
                 print(f"port {value} ({key}) is {output[value]}")
                 print(60 * '*')
-                res=True
+                res = True
                 break
         if res == False:
             print(60 * '*')
             print(f"port {targetPorts[0]}  is {output[targetPorts[0]]}")
             print(60 * '*')
+
 
 if __name__ == "__main__":
     main()
