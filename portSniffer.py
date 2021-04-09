@@ -282,16 +282,18 @@ def main():
     # print(args.range)
     server = args.Server
     timeout = args.timeout
-    if args.threadsNumber == None:
+    threadsNumber=args.threadsNumber
+    if args.threadsNumber is None:
         threadsNumber = 1
 
-    if args.top50ports == True:
+
+    if args.top50ports:
         # print(top50FamousPorts)
         targetPorts = top50FamousPorts
-    elif args.top100ports == True:
+    elif args.top100ports:
         # print(top100FamousPorts)
         targetPorts = top100FamousPorts
-    elif args.top1000ports == True:
+    elif args.top1000ports:
         # print(top1000FamousPorts)
         targetPorts = top1000FamousPorts
     elif args.range:
@@ -306,7 +308,8 @@ def main():
     else:
         targetPorts = porseman
     print(
-        f"server is {server}, timeout is {timeout}, threads number is {threadsNumber},portDn = {portRangeDown}, portUp = {portRangeUp},targe port is {targetPorts}")
+        f"server is {server}, timeout is {timeout}, threads number is {threadsNumber}, portDn = {portRangeDown}, "
+        f"portUp = {portRangeUp}, target port(s) is {targetPorts}")
 
     # ------------------------------------------------------------------------------------------------------------------
     server = fixServer(server)
@@ -333,4 +336,8 @@ def main():
     print(output)
     printResult(targetPorts, output)
 
-main()
+
+if __name__ == "__main__":
+    main()
+else:
+    start()
