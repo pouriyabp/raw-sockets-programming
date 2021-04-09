@@ -167,7 +167,7 @@ def printResult(targetArry, outputDict):
             print(f"port {port} : OPEN")
     print(60 * '*')
 
-
+#get server ip address
 def checkHostname(server):
     try:
         server_ip = socket.gethostbyname(server)
@@ -224,6 +224,7 @@ def start():
     serverIp = checkHostname(server)
     if serverIp == None:
         print(f"server {server} is unknown!")
+        exit()
     else:
         print(f"server ip is {serverIp}")
 
