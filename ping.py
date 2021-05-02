@@ -103,14 +103,18 @@ def receive_one_icmp_packet(udp_socket, send_time, timeout):
         reply_packet, address = udp_socket.recvfrom(2048)
         total_time *= 1000  # change it to ms
         # total_time = int(total_time)
-        total_time ="{:.5f}".format(total_time)
+        total_time = "{:.5f}".format(total_time)
         return reply_packet, address, total_time
 
 
 def open_packet(reply_packet, identifier, sequence_number, rtt, address):
-    type, code, checksum, pid, sequence = struct.unpack('!BBHHH', reply_packet)
-    if type == 0 and code == 0 and pid == identifier and sequence == sequence_number:
-        return f"Reply form IP<{address}> in {rtt}ms seq={sequence}."
+    type_of_message, code, checksum, pid, sequence = struct.unpack('!BBHHH', reply_packet[20:28])
+    # first we have to check the checksum:
+    reply_header = struct.pack('!BBHHH', type_of_message, code, 0, pid, sequence)
+    if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
+        # second we check the header of reply packet:
+        if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
+            return f"Reply form IP<{address}> in {rtt}ms seq={sequence}."
 
 
 def change_to_ip(host_name):
@@ -138,5 +142,5 @@ if __name__ == "__main__":
     print(reply_packet)
     print(len(bytes(reply_packet)))
     print(reply_packet[20:28])
-    print(open_packet(reply_packet[20:28], os.getpid(), 1, time, address[0]))
+    print(open_packet(reply_packet, os.getpid(), 1, time, address[0]))
     print()
