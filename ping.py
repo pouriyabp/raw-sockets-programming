@@ -3,6 +3,7 @@ import struct
 import random
 import os
 import sys
+import time
 
 """  
  ICMP Echo Request packets:
@@ -19,7 +20,7 @@ import sys
 ICMP_ECHO_REQUEST = 8
 
 
-def crate_packet(identifier, sequence_number=1, packet_size=0):
+def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
     # Maximum for an unsigned short int c object counts to 65535(0xFFFF) we have to sure that our packet id is not
     # greater than that.
     identifier = identifier & 0xFFFF
@@ -43,6 +44,7 @@ def crate_packet(identifier, sequence_number=1, packet_size=0):
 
 
 # copy form github https://github.com/Akhavi/pyping/blob/master/pyping/core.py with few changes.
+# The checksum calculation is as follows RFC1071 (https://tools.ietf.org/html/rfc1071)
 def calculate_checksum(source_string):
     countTo = (int(len(source_string) / 2)) * 2
     sum = 0
@@ -78,6 +80,16 @@ def calculate_checksum(source_string):
     return answer
 
 
+def send_one_icmp_packet(destination, request_packet, tcp_socket):
+    send_time = time.time()
+    try:
+        tcp_socket.sendto(request_packet, (destination, 1))
+    except socket.error as e:
+        print(e)
+        return
+    return send_time
+
+
 def change_to_ip(host_name):
     try:
         server_ip = socket.gethostbyname(host_name)
@@ -90,5 +102,8 @@ def change_to_ip(host_name):
 if __name__ == "__main__":
     print(change_to_ip('www.google.com'))
     print(socket.getprotobyname('icmp'))
-    packet = crate_packet(identifier=os.getpid(), packet_size=55)
+    packet = crate_packet(identifier=os.getpid(), packet_size=0)
+    current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
+    send_one_icmp_packet('www.google.com', packet, current_socket)
+    print(len(bytes(packet)))
     print(packet)
