@@ -94,12 +94,23 @@ def receive_one_icmp_packet(udp_socket, send_time, timeout):
     while True:
         rlist, wlist, xlist = select.select([udp_socket], [], [], timeout)
         start_time_for_receive = time.time()
-        print((start_time_for_receive - send_time))
+        total_time = start_time_for_receive - send_time
+        timeout = timeout - total_time
         if not rlist:
             return None
+        if timeout <= 0:
+            return None
         reply_packet, address = udp_socket.recvfrom(2048)
+        total_time *= 1000  # change it to ms
+        # total_time = int(total_time)
+        total_time ="{:.5f}".format(total_time)
+        return reply_packet, address, total_time
 
-        return reply_packet, address
+
+def open_packet(reply_packet, identifier, sequence_number, rtt, address):
+    type, code, checksum, pid, sequence = struct.unpack('!BBHHH', reply_packet)
+    if type == 0 and code == 0 and pid == identifier and sequence == sequence_number:
+        return f"Reply form IP<{address}> in {rtt}ms seq={sequence}."
 
 
 def change_to_ip(host_name):
@@ -115,9 +126,17 @@ if __name__ == "__main__":
     print(change_to_ip('www.google.com'))
     print(socket.getprotobyname('icmp'))
     packet = crate_packet(identifier=os.getpid(), packet_size=0)
+    print(packet)
+    print(len(bytes(packet)))
     current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
     send_time = send_one_icmp_packet('www.google.com', packet, current_socket)
     print(send_time)
-    print(receive_one_icmp_packet(current_socket, send_time, 2))
-    print(len(bytes(packet)))
-    print(packet)
+    reply_packet, address, time = receive_one_icmp_packet(current_socket, send_time, 2)
+    print(address[0])
+    # print(receive_one_icmp_packet(current_socket, send_time, 2))
+
+    print(reply_packet)
+    print(len(bytes(reply_packet)))
+    print(reply_packet[20:28])
+    print(open_packet(reply_packet[20:28], os.getpid(), 1, time, address[0]))
+    print()
