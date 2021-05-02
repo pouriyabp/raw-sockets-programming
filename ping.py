@@ -89,6 +89,10 @@ def send_one_icmp_packet(destination, request_packet, tcp_socket):
         return
     return send_time
 
+def recive_one_icmp_packet(tcp_socket):
+    while True:
+        packet = tcp_socket.recv(2048)
+        return packet
 
 def change_to_ip(host_name):
     try:
@@ -105,5 +109,6 @@ if __name__ == "__main__":
     packet = crate_packet(identifier=os.getpid(), packet_size=0)
     current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
     send_one_icmp_packet('www.google.com', packet, current_socket)
+    print(recive_one_icmp_packet(current_socket))
     print(len(bytes(packet)))
     print(packet)
