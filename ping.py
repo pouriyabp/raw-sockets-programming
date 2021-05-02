@@ -1,6 +1,6 @@
 import socket
 import struct
-import random
+import select
 import os
 import sys
 import time
@@ -80,19 +80,27 @@ def calculate_checksum(source_string):
     return answer
 
 
-def send_one_icmp_packet(destination, request_packet, tcp_socket):
+def send_one_icmp_packet(destination, request_packet, udp_socket):
     send_time = time.time()
     try:
-        tcp_socket.sendto(request_packet, (destination, 1))
+        udp_socket.sendto(request_packet, (destination, 1))
     except socket.error as e:
         print(e)
         return
     return send_time
 
-def recive_one_icmp_packet(tcp_socket):
+
+def receive_one_icmp_packet(udp_socket, send_time, timeout):
     while True:
-        packet = tcp_socket.recv(2048)
-        return packet
+        rlist, wlist, xlist = select.select([udp_socket], [], [], timeout)
+        start_time_for_receive = time.time()
+        print((start_time_for_receive - send_time))
+        if not rlist:
+            return None
+        reply_packet, address = udp_socket.recvfrom(2048)
+
+        return reply_packet, address
+
 
 def change_to_ip(host_name):
     try:
@@ -108,7 +116,8 @@ if __name__ == "__main__":
     print(socket.getprotobyname('icmp'))
     packet = crate_packet(identifier=os.getpid(), packet_size=0)
     current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
-    send_one_icmp_packet('www.google.com', packet, current_socket)
-    print(recive_one_icmp_packet(current_socket))
+    send_time = send_one_icmp_packet('www.google.com', packet, current_socket)
+    print(send_time)
+    print(receive_one_icmp_packet(current_socket, send_time, 2))
     print(len(bytes(packet)))
     print(packet)
