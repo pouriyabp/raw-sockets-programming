@@ -106,18 +106,18 @@ def send_one_icmp_packet(destination, request_packet, udp_socket):
 
 def receive_one_icmp_packet(udp_socket, send_time, timeout):
     while True:
-        rlist, wlist, xlist = select.select([udp_socket], [], [], timeout)
+        r_list, w_list, x_list = select.select([udp_socket], [], [], timeout)
         start_time_for_receive = time.time()
         total_time = start_time_for_receive - send_time
         timeout = timeout - total_time
-        if not rlist:
+        if not r_list:
             return None
         if timeout <= 0:
             return None
         reply_packet, address = udp_socket.recvfrom(2048)
         total_time *= 1000  # change it to ms
         # total_time = int(total_time)
-        total_time = "{:.5f}".format(total_time)
+        total_time = "{:.5f}".format(total_time)  # for floating point
         return reply_packet, address, total_time
 
 
@@ -128,8 +128,7 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
     if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
         # second we check the header of reply packet:
         if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
-            return f"Reply form IP<{TextColors.GREEN}{address}{TextColors.RESET}> in {TextColors.CYAN}{rtt}ms{TextColors.RESET} " \
-                   f"seq={TextColors.CYAN}{sequence}{TextColors.RESET}."
+            return f"Reply form IP<{TextColors.GREEN}{address}{TextColors.RESET}> in {TextColors.CYAN}{rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{sequence}{TextColors.RESET}."
 
 
 def change_to_ip(host_name):
@@ -140,19 +139,25 @@ def change_to_ip(host_name):
         print(e)
         return None
 
+# handle sigint
+def signal_handler(sig, frame):
+    print(f'\n{TextColors.CYAN}--------------------statistics--------------------{TextColors.RESET}\n')
+
+    sys.exit(0)
+
 
 def ping_one_host(host_name, timeout=20, icmp_packet_size=0):
     ip_of_host = change_to_ip(host_name)
-    id = os.getpid()
+    pid = os.getpid()
     seq_number = 1
     while True:
-        request_icmp_packet = crate_packet(id, seq_number, icmp_packet_size)
+        request_icmp_packet = crate_packet(pid, seq_number, icmp_packet_size)
         try:
             my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
             send_time = send_one_icmp_packet(ip_of_host, request_icmp_packet, my_socket)
             reply_icmp_packet, address, rtt = receive_one_icmp_packet(my_socket, send_time, timeout)
             if reply_icmp_packet is not None and address[0] == ip_of_host:
-                result = open_packet(reply_icmp_packet, id, seq_number, rtt, ip_of_host)
+                result = open_packet(reply_icmp_packet, pid, seq_number, rtt, ip_of_host)
                 print(result)
             my_socket.close()
         except socket.error as e:
@@ -163,5 +168,10 @@ def ping_one_host(host_name, timeout=20, icmp_packet_size=0):
         time.sleep(0.5)
 
 
-if __name__ == "__main__":
+def main():
+    signal.signal(signal.SIGINT, signal_handler)
     ping_one_host('www.google.com', 1)
+
+
+if __name__ == "__main__":
+    main()
