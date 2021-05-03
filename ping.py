@@ -4,7 +4,7 @@ import select
 import os
 import sys
 import time
-
+import signal
 """  
  ICMP Echo Request packets:
     0                   1                   2                   3
@@ -126,21 +126,27 @@ def change_to_ip(host_name):
         return None
 
 
-if __name__ == "__main__":
-    print(change_to_ip('www.google.com'))
-    print(socket.getprotobyname('icmp'))
-    packet = crate_packet(identifier=os.getpid(), packet_size=0)
-    print(packet)
-    print(len(bytes(packet)))
-    current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
-    send_time = send_one_icmp_packet('www.google.com', packet, current_socket)
-    print(send_time)
-    reply_packet, address, time = receive_one_icmp_packet(current_socket, send_time, 2)
-    print(address[0])
-    # print(receive_one_icmp_packet(current_socket, send_time, 2))
+def ping_one_host(host_name, timeout=20, icmp_packet_size=0):
+    ip_of_host = change_to_ip(host_name)
+    id = os.getpid()
+    seq_number = 1
+    while True:
+        request_icmp_packet = crate_packet(id, seq_number, icmp_packet_size)
+        try:
+            my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
+            send_time = send_one_icmp_packet(ip_of_host, request_icmp_packet, my_socket)
+            reply_icmp_packet, address, rtt = receive_one_icmp_packet(my_socket, send_time, timeout)
+            if reply_icmp_packet is not None and address[0] == ip_of_host:
+                result = open_packet(reply_icmp_packet, id, seq_number, rtt, ip_of_host)
+                print(result)
+            my_socket.close()
+        except socket.error as e:
+            print(e)
+        except TypeError as e:
+            print(f"Reply Timeout.")
+        seq_number += 1
+        time.sleep(0.5)
 
-    print(reply_packet)
-    print(len(bytes(reply_packet)))
-    print(reply_packet[20:28])
-    print(open_packet(reply_packet, os.getpid(), 1, time, address[0]))
-    print()
+
+if __name__ == "__main__":
+    ping_one_host('www.google.com', 1)
