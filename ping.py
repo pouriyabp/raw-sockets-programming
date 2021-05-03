@@ -34,8 +34,28 @@ class TextColors:
     RESET = '\033[m'
 
 
+# set information of each icmp reply in this class
+class Response:
+    def __init__(self, address, packet, rtt, pid, seq):
+        self.address = address
+        self.packet = packet
+        self.rtt = rtt
+        self.id = pid
+        self.sequence = seq
+
+
+# set information of each icmp request in this class
+class Request:
+    def __init__(self, address, packet, send_time, pid, seq):
+        self.address = address
+        self.packet = packet
+        self.sendTime = send_time
+        self.id = pid
+        self.sequence = seq
+
+
 def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
-    # Maximum for an unsigned short int c object counts to 65535(0xFFFF) we have to sure that our packet id is not
+    # Maximum for an unsigned short int c object counts to 65535(0xFFFF). we have to sure that our packet id is not
     # greater than that.
     identifier = identifier & 0xFFFF
 
@@ -128,7 +148,12 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
     if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
         # second we check the header of reply packet:
         if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
-            return f"Reply form IP<{TextColors.GREEN}{address}{TextColors.RESET}> in {TextColors.CYAN}{rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{sequence}{TextColors.RESET}."
+            response = Response(address, reply_packet, rtt, pid, sequence)
+            return response
+
+
+def print_response(response):
+    return f"Reply form IP<{TextColors.GREEN}{response.address}{TextColors.RESET}> in {TextColors.CYAN}{response.rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{response.sequence}{TextColors.RESET}."
 
 
 def change_to_ip(host_name):
@@ -139,6 +164,7 @@ def change_to_ip(host_name):
         print(e)
         return None
 
+
 # handle sigint
 def signal_handler(sig, frame):
     print(f'\n{TextColors.CYAN}--------------------statistics--------------------{TextColors.RESET}\n')
@@ -146,7 +172,7 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-def ping_one_host(host_name, timeout=20, icmp_packet_size=0):
+def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
     ip_of_host = change_to_ip(host_name)
     pid = os.getpid()
     seq_number = 1
@@ -155,10 +181,12 @@ def ping_one_host(host_name, timeout=20, icmp_packet_size=0):
         try:
             my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
             send_time = send_one_icmp_packet(ip_of_host, request_icmp_packet, my_socket)
-            reply_icmp_packet, address, rtt = receive_one_icmp_packet(my_socket, send_time, timeout)
+            req = Request(ip_of_host, request_icmp_packet, send_time, pid, seq_number)
+
+            reply_icmp_packet, address, rtt = receive_one_icmp_packet(my_socket, req.sendTime, timeout)
             if reply_icmp_packet is not None and address[0] == ip_of_host:
                 result = open_packet(reply_icmp_packet, pid, seq_number, rtt, ip_of_host)
-                print(result)
+                print(print_response(result))
             my_socket.close()
         except socket.error as e:
             print(e)
