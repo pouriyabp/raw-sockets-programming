@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import signal
+
 """  
  ICMP Echo Request packets:
     0                   1                   2                   3
@@ -18,6 +19,19 @@ import signal
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 """
 ICMP_ECHO_REQUEST = 8
+
+
+class TextColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[31m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[m'
 
 
 def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
@@ -114,7 +128,8 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
     if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
         # second we check the header of reply packet:
         if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
-            return f"Reply form IP<{address}> in {rtt}ms seq={sequence}."
+            return f"Reply form IP<{TextColors.GREEN}{address}{TextColors.RESET}> in {TextColors.CYAN}{rtt}ms{TextColors.RESET} " \
+                   f"seq={TextColors.CYAN}{sequence}{TextColors.RESET}."
 
 
 def change_to_ip(host_name):
