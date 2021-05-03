@@ -19,6 +19,9 @@ import signal
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 """
 ICMP_ECHO_REQUEST = 8
+ARRAY_OF_REQUEST = []
+ARRAY_OF_RESPONSE = []
+ARRAY_OF_HOSTS = ['216.58.208.228', '8.8.8.8']
 
 
 class TextColors:
@@ -32,6 +35,9 @@ class TextColors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     RESET = '\033[m'
+    YELLOW = '\033[93m'
+    ORANGE = '\033[91m'
+    PURPLE = '\033[35m'
 
 
 # set information of each icmp reply in this class
@@ -43,6 +49,10 @@ class Response:
         self.id = pid
         self.sequence = seq
 
+    def __repr__(self):
+        return f"{self.sequence}"
+        # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
+
 
 # set information of each icmp request in this class
 class Request:
@@ -52,6 +62,10 @@ class Request:
         self.sendTime = send_time
         self.id = pid
         self.sequence = seq
+
+    def __repr__(self):
+        return f"{self.sequence}"
+        # return f"IP={self.address} RTT={self.sendTime} seq={self.sequence}"
 
 
 def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
@@ -153,7 +167,7 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
 
 
 def print_response(response):
-    return f"Reply form IP<{TextColors.GREEN}{response.address}{TextColors.RESET}> in {TextColors.CYAN}{response.rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{response.sequence}{TextColors.RESET}."
+    return f"Reply form IP<{TextColors.ORANGE}{response.address}{TextColors.RESET}> in {TextColors.CYAN}{response.rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{response.sequence}{TextColors.RESET}."
 
 
 def change_to_ip(host_name):
@@ -165,10 +179,61 @@ def change_to_ip(host_name):
         return None
 
 
+def calculate_statistics():
+    hosts_dict_rtt = {}
+    hosts_dict_loss = {}
+    hosts_dict_req_packets = {}
+
+    for host in ARRAY_OF_HOSTS:
+        loss = 0
+        sum_rtt = 0
+        req_packets = 0
+        for req in ARRAY_OF_REQUEST:
+            if req.address == host:
+                req_packets += 1
+                find = False
+                for res in ARRAY_OF_RESPONSE:
+                    if req.id == res.id and req.sequence == res.sequence:
+                        sum_rtt += float(res.rtt)
+                        find = True
+                        break
+                if not find:
+                    loss += 1
+        hosts_dict_rtt[host] = sum_rtt
+        hosts_dict_loss[host] = loss
+        hosts_dict_req_packets[host] = req_packets
+    return hosts_dict_req_packets, hosts_dict_rtt, hosts_dict_loss
+
+
+def show_statistics(hosts_arr, hosts_dict_req_packets, hosts_dict_rtt, hosts_dict_loss):
+    result = []
+    for host in hosts_arr:
+        send = hosts_dict_req_packets[host]
+        rtt = hosts_dict_rtt[host]
+        loss = hosts_dict_loss[host]
+        receive = send - loss
+        if send != 0:
+            average_rtt = rtt / send
+            per_loss = (loss / send) * 100
+        else:
+            average_rtt = 0.0
+            per_loss = 0.0
+        inf = f"For IP<{TextColors.ORANGE}{host}{TextColors.RESET}> <{TextColors.YELLOW}{send}{TextColors.RESET}> packet(s) sent and <{TextColors.GREEN}{receive}{TextColors.RESET}> packet(s) received, loss = {TextColors.RED}{per_loss}{TextColors.RESET}% "
+        result.append(inf)
+    return result
+
+
 # handle sigint
 def signal_handler(sig, frame):
-    print(f'\n{TextColors.CYAN}--------------------statistics--------------------{TextColors.RESET}\n')
-
+    print(f'\n{TextColors.CYAN}--------------------statistics--------------------{TextColors.RESET}')
+    req_packet, host_rtt, host_loss = calculate_statistics()
+    resutl = show_statistics(ARRAY_OF_HOSTS, req_packet, host_rtt, host_loss)
+    for text in resutl:
+        print(text)
+    max_rtt = max(res.rtt for res in ARRAY_OF_RESPONSE)
+    min_rtt = min(res.rtt for res in ARRAY_OF_RESPONSE)
+    print(
+        f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt}{TextColors.RESET}>ms, MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt}{TextColors.RESET}>ms")
     sys.exit(0)
 
 
@@ -182,15 +247,16 @@ def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
             my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
             send_time = send_one_icmp_packet(ip_of_host, request_icmp_packet, my_socket)
             req = Request(ip_of_host, request_icmp_packet, send_time, pid, seq_number)
-
+            ARRAY_OF_REQUEST.append(req)
             reply_icmp_packet, address, rtt = receive_one_icmp_packet(my_socket, req.sendTime, timeout)
             if reply_icmp_packet is not None and address[0] == ip_of_host:
                 result = open_packet(reply_icmp_packet, pid, seq_number, rtt, ip_of_host)
+                ARRAY_OF_RESPONSE.append(result)
                 print(print_response(result))
             my_socket.close()
         except socket.error as e:
             print(e)
-        except TypeError as e:
+        except TypeError:
             print(f"Reply Timeout.")
         seq_number += 1
         time.sleep(0.5)
@@ -198,7 +264,7 @@ def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
 
 def main():
     signal.signal(signal.SIGINT, signal_handler)
-    ping_one_host('www.google.com', 1)
+    ping_one_host(ARRAY_OF_HOSTS[0], 1)
 
 
 if __name__ == "__main__":
