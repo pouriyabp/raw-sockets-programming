@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import signal
+import asyncio
 
 """  
  ICMP Echo Request packets:
@@ -167,7 +168,8 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
 
 
 def print_response(response):
-    return f"Reply form IP<{TextColors.ORANGE}{response.address}{TextColors.RESET}> in {TextColors.CYAN}{response.rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{response.sequence}{TextColors.RESET}."
+    return f"Reply form IP<{TextColors.ORANGE}{response.address}{TextColors.RESET}> in {TextColors.CYAN}" \
+           f"{response.rtt}ms{TextColors.RESET} seq={TextColors.CYAN}{response.sequence}{TextColors.RESET}."
 
 
 def change_to_ip(host_name):
@@ -215,10 +217,13 @@ def show_statistics(hosts_arr, hosts_dict_req_packets, hosts_dict_rtt, hosts_dic
         if send != 0:
             average_rtt = rtt / send
             per_loss = (loss / send) * 100
+            per_loss = "{:.2f}".format(per_loss)
         else:
             average_rtt = 0.0
             per_loss = 0.0
-        inf = f"For IP<{TextColors.ORANGE}{host}{TextColors.RESET}> <{TextColors.YELLOW}{send}{TextColors.RESET}> packet(s) sent and <{TextColors.GREEN}{receive}{TextColors.RESET}> packet(s) received, loss = {TextColors.RED}{per_loss}{TextColors.RESET}% "
+        inf = f"For IP<{TextColors.ORANGE}{host}{TextColors.RESET}> <{TextColors.YELLOW}{send}{TextColors.RESET}> " \
+              f"packet(s) sent and <{TextColors.GREEN}{receive}{TextColors.RESET}> packet(s) " \
+              f"received, loss = {TextColors.RED}{per_loss}{TextColors.RESET}% "
         result.append(inf)
     return result
 
@@ -227,17 +232,18 @@ def show_statistics(hosts_arr, hosts_dict_req_packets, hosts_dict_rtt, hosts_dic
 def signal_handler(sig, frame):
     print(f'\n{TextColors.CYAN}--------------------statistics--------------------{TextColors.RESET}')
     req_packet, host_rtt, host_loss = calculate_statistics()
-    resutl = show_statistics(ARRAY_OF_HOSTS, req_packet, host_rtt, host_loss)
-    for text in resutl:
+    result = show_statistics(ARRAY_OF_HOSTS, req_packet, host_rtt, host_loss)
+    for text in result:
         print(text)
     max_rtt = max(res.rtt for res in ARRAY_OF_RESPONSE)
     min_rtt = min(res.rtt for res in ARRAY_OF_RESPONSE)
     print(
-        f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt}{TextColors.RESET}>ms, MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt}{TextColors.RESET}>ms")
+        f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt}{TextColors.RESET}>ms, "
+        f"MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt}{TextColors.RESET}>ms")
     sys.exit(0)
 
 
-def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
+async def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
     ip_of_host = change_to_ip(host_name)
     pid = os.getpid()
     seq_number = 1
@@ -259,13 +265,19 @@ def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
         except TypeError:
             print(f"Reply Timeout.")
         seq_number += 1
-        time.sleep(0.5)
+        await asyncio.sleep(1)
+        # time.sleep(0.5)
 
 
-def main():
-    signal.signal(signal.SIGINT, signal_handler)
-    ping_one_host(ARRAY_OF_HOSTS[0], 1)
+async def main(timeout=1, packet_size=0):
+    arr_of_task = []
+    for host in ARRAY_OF_HOSTS:
+        task = asyncio.create_task(ping_one_host(host, timeout, packet_size))
+        arr_of_task.append(task)
+    for task in arr_of_task:
+        await task
 
 
 if __name__ == "__main__":
-    main()
+    signal.signal(signal.SIGINT, signal_handler)
+    asyncio.run(main())
