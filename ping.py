@@ -50,9 +50,9 @@ class Response:
         self.id = pid
         self.sequence = seq
 
-    def __repr__(self):
-        return f"{self.sequence}"
-        # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
+    # def __repr__(self):
+    #     return f"{self.rtt}"
+    #     # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
 
 
 # set information of each icmp request in this class
@@ -64,9 +64,9 @@ class Request:
         self.id = pid
         self.sequence = seq
 
-    def __repr__(self):
-        return f"{self.sequence}"
-        # return f"IP={self.address} RTT={self.sendTime} seq={self.sequence}"
+    # def __repr__(self):
+    #     return f"{self.sequence}"
+    #     # return f"IP={self.address} RTT={self.sendTime} seq={self.sequence}"
 
 
 def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
