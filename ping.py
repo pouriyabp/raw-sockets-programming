@@ -6,6 +6,7 @@ import sys
 import time
 import signal
 import asyncio
+import argparse
 
 """  
  ICMP Echo Request packets:
@@ -22,7 +23,7 @@ import asyncio
 ICMP_ECHO_REQUEST = 8
 ARRAY_OF_REQUEST = []
 ARRAY_OF_RESPONSE = []
-ARRAY_OF_HOSTS = ['216.58.208.228', '8.8.8.8']
+ARRAY_OF_HOSTS = []
 
 
 class TextColors:
@@ -177,7 +178,7 @@ def change_to_ip(host_name):
         server_ip = socket.gethostbyname(host_name)
         return server_ip
     except socket.error as e:
-        print(e)
+        # print(e)
         return None
 
 
@@ -280,4 +281,33 @@ async def main(timeout=1, packet_size=0):
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description=" *ping hosts* ")
+    parser.add_argument("host", help="The host or hosts that you want ping.", type=str)
+    parser.add_argument("-t", "--timeout", help="timeout for each ping reply (default is 1 second).", type=float)
+    parser.add_argument("-s", "--size", help="size of payload part of each ICMP request packet (default payload is 0).",
+                        type=int)
+    args = parser.parse_args()
+    hosts = args.host
+    timeout = args.timeout
+    payload_size = args.size
+    if timeout is None:
+        timeout = 1
+    if payload_size is None:
+        payload_size = 0
+    hosts = hosts.split(" ")
+
+    for text in hosts:
+        ip_of_text = change_to_ip(text)
+        if ip_of_text is not None:
+            if ip_of_text not in ARRAY_OF_HOSTS:
+                ARRAY_OF_HOSTS.append(ip_of_text)
+                if str(ip_of_text) == text:
+                    print(
+                        f"IP<{TextColors.ORANGE}{text}{TextColors.RESET}> added for being ping.")
+                else:
+                    print(
+                        f"Host <{TextColors.ORANGE}{text}{TextColors.RESET}><{TextColors.CYAN}{ip_of_text}"
+                        f"{TextColors.RESET}> added for being ping.")
+    if len(ARRAY_OF_HOSTS) == 0:
+        print(f'{TextColors.RED}NO HOST FOUND!!!!{TextColors.RESET}')
+    asyncio.run(main(timeout, payload_size))
