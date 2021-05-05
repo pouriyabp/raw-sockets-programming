@@ -196,7 +196,7 @@ def calculate_statistics():
                 req_packets += 1
                 find = False
                 for res in ARRAY_OF_RESPONSE:
-                    if req.id == res.id and req.sequence == res.sequence:
+                    if req.id == res.id and req.sequence == res.sequence and req.address == res.address:
                         sum_rtt += float(res.rtt)
                         find = True
                         break
@@ -241,8 +241,6 @@ def signal_handler(sig, frame):
     print(
         f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt_obj.rtt}{TextColors.RESET}>ms, "
         f"MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt_obj.rtt}{TextColors.RESET}>ms")
-    print(ARRAY_OF_RESPONSE)
-    print(ARRAY_OF_REQUEST)
     sys.exit(0)
 
 
