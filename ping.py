@@ -52,9 +52,9 @@ class Response:
         self.id = pid
         self.sequence = seq
 
-    # def __repr__(self):
-    #     return f"{self.rtt}"
-    #     # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
+    def __repr__(self):
+        return f"{self.sequence}"
+        # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
 
 
 # set information of each icmp request in this class
@@ -66,9 +66,9 @@ class Request:
         self.id = pid
         self.sequence = seq
 
-    # def __repr__(self):
-    #     return f"{self.sequence}"
-    #     # return f"IP={self.address} RTT={self.sendTime} seq={self.sequence}"
+    def __repr__(self):
+        return f"{self.sequence}"
+        # return f"IP={self.address} RTT={self.sendTime} seq={self.sequence}"
 
 
 def crate_packet(identifier, sequence_number=1, packet_size=10):  # default packet size is 10 byte.
@@ -241,6 +241,8 @@ def signal_handler(sig, frame):
     print(
         f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt_obj.rtt}{TextColors.RESET}>ms, "
         f"MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt_obj.rtt}{TextColors.RESET}>ms")
+    print(ARRAY_OF_RESPONSE)
+    print(ARRAY_OF_REQUEST)
     sys.exit(0)
 
 
@@ -270,13 +272,13 @@ async def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
         # time.sleep(0.5)
 
 
-async def main(timeout=1, packet_size=0):
-    arr_of_task = []
-    for host in ARRAY_OF_HOSTS:
-        task = asyncio.create_task(ping_one_host(host, timeout, packet_size))
-        arr_of_task.append(task)
-    for task in arr_of_task:
-        await task
+# async def main(timeout=1, packet_size=0):
+#     arr_of_task = []
+#     for host in ARRAY_OF_HOSTS:
+#         task = asyncio.create_task(ping_one_host(host, timeout, packet_size))
+#         arr_of_task.append(task)
+#     for task in arr_of_task:
+#         await task
 
 
 if __name__ == "__main__":
@@ -303,13 +305,15 @@ if __name__ == "__main__":
                 ARRAY_OF_HOSTS.append(ip_of_text)
                 if str(ip_of_text) == text:
                     print(
-                        f"IP<{TextColors.ORANGE}{text}{TextColors.RESET}> added for being ping.")
+                        f"IP<{TextColors.ORANGE}{text}{TextColors.RESET}> added for being ping...")
                 else:
                     print(
                         f"Host <{TextColors.ORANGE}{text}{TextColors.RESET}><{TextColors.CYAN}{ip_of_text}"
-                        f"{TextColors.RESET}> added for being ping.")
+                        f"{TextColors.RESET}> added for being ping...")
     if len(ARRAY_OF_HOSTS) == 0:
         print(f'{TextColors.RED}NO HOST FOUND!!!!{TextColors.RESET}')
-    asyncio.run(main(timeout_for_response, payload_size))
-
-# TODO solve bug min and max statics.
+    # asyncio.run(main(timeout_for_response, payload_size))
+    loop = asyncio.get_event_loop()
+    for host in ARRAY_OF_HOSTS:
+        task = asyncio.ensure_future(ping_one_host(host, timeout_for_response, payload_size))
+    loop.run_forever()
