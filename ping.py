@@ -297,7 +297,11 @@ if __name__ == "__main__":
     hosts = hosts.split(" ")
 
     for text in hosts:
+        if text == "127.0.0.1":  # TODO: solve problem for local host.
+            continue
         ip_of_text = change_to_ip(text)
+        if ip_of_text == '0.0.0.0':
+            continue
         if ip_of_text is not None:
             if ip_of_text not in ARRAY_OF_HOSTS:
                 ARRAY_OF_HOSTS.append(ip_of_text)
