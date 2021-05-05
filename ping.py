@@ -162,6 +162,9 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
     type_of_message, code, checksum, pid, sequence = struct.unpack('!BBHHH', reply_packet[20:28])
     # first we have to check the checksum:
     reply_header = struct.pack('!BBHHH', type_of_message, code, 0, pid, sequence)
+    if address == '127.0.0.1':
+        response = Response(address, reply_packet, rtt, pid, sequence)
+        return response
     if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
         # second we check the header of reply packet:
         if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
@@ -297,8 +300,6 @@ if __name__ == "__main__":
     hosts = hosts.split(" ")
 
     for text in hosts:
-        if text == "127.0.0.1":  # TODO: solve problem for local host.
-            continue
         ip_of_text = change_to_ip(text)
         if ip_of_text == '0.0.0.0':
             continue
