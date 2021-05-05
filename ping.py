@@ -7,6 +7,7 @@ import time
 import signal
 import asyncio
 import argparse
+from operator import attrgetter
 
 """  
  ICMP Echo Request packets:
@@ -177,8 +178,7 @@ def change_to_ip(host_name):
     try:
         server_ip = socket.gethostbyname(host_name)
         return server_ip
-    except socket.error as e:
-        # print(e)
+    except socket.error:
         return None
 
 
@@ -236,11 +236,11 @@ def signal_handler(sig, frame):
     result = show_statistics(ARRAY_OF_HOSTS, req_packet, host_rtt, host_loss)
     for text in result:
         print(text)
-    max_rtt = max(res.rtt for res in ARRAY_OF_RESPONSE)
-    min_rtt = min(res.rtt for res in ARRAY_OF_RESPONSE)
+    max_rtt_obj = max(ARRAY_OF_RESPONSE, key=attrgetter('rtt'))
+    min_rtt_obj = min(ARRAY_OF_RESPONSE, key=attrgetter('rtt'))
     print(
-        f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt}{TextColors.RESET}>ms, "
-        f"MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt}{TextColors.RESET}>ms")
+        f"MINIMUM RTT=<{TextColors.PURPLE}{min_rtt_obj.rtt}{TextColors.RESET}>ms, "
+        f"MAXIMUM RTT=<{TextColors.PURPLE}{max_rtt_obj.rtt}{TextColors.RESET}>ms")
     sys.exit(0)
 
 
@@ -288,10 +288,10 @@ if __name__ == "__main__":
                         type=int)
     args = parser.parse_args()
     hosts = args.host
-    timeout = args.timeout
+    timeout_for_response = args.timeout
     payload_size = args.size
-    if timeout is None:
-        timeout = 1
+    if timeout_for_response is None:
+        timeout_for_response = 1
     if payload_size is None:
         payload_size = 0
     hosts = hosts.split(" ")
@@ -310,4 +310,6 @@ if __name__ == "__main__":
                         f"{TextColors.RESET}> added for being ping.")
     if len(ARRAY_OF_HOSTS) == 0:
         print(f'{TextColors.RED}NO HOST FOUND!!!!{TextColors.RESET}')
-    asyncio.run(main(timeout, payload_size))
+    asyncio.run(main(timeout_for_response, payload_size))
+
+# TODO solve bug min and max statics.
