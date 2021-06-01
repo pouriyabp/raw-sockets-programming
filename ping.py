@@ -8,6 +8,7 @@ import signal
 import asyncio
 import argparse
 from operator import attrgetter
+import random
 
 """  
  ICMP Echo Request packets:
@@ -249,7 +250,7 @@ def signal_handler(sig, frame):
 
 async def ping_one_host(host_name, timeout=1, icmp_packet_size=0):
     ip_of_host = change_to_ip(host_name)
-    pid = os.getpid()
+    pid = os.getpid() + int(random.randint(1, 1000))
     seq_number = 1
     while True:
         request_icmp_packet = crate_packet(pid, seq_number, icmp_packet_size)
