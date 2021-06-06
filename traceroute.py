@@ -4,12 +4,15 @@ import socket
 import sys
 import os
 import time
+import select
 
 # ======================================================================================================================
 # ICMP protocol
 
 
 ICMP_ECHO_REQUEST = 8
+ICMP_MAX_HOP = 50  # maximum hop that we go.
+ICMP_TRIES = 3  # default tries for each hop.
 
 
 # crate ICMP packet with this function
@@ -75,23 +78,72 @@ def calculate_checksum(source_string):
     return answer
 
 
-def send_one_icmp_packet(destination, request_packet, udp_socket):
+def send_one_icmp_packet(destination, request_packet, udp_socket, port_number=0):
     send_time = time.time()
     try:
-        udp_socket.sendto(request_packet, (destination, 1))
+        udp_socket.sendto(request_packet, (destination, port_number))
     except socket.error as e:
         print(e)
         return
     return send_time
 
 
+def receive_one_icmp_packet(udp_socket, send_time, timeout):
+    while True:
+        r_list, w_list, x_list = select.select([udp_socket], [], [], timeout)
+        start_time_for_receive = time.time()
+        total_time = start_time_for_receive - send_time
+        timeout = timeout - total_time
+        if not r_list:
+            return None
+        if timeout <= 0:
+            return None
+        reply_packet, address = udp_socket.recvfrom(2048)
+        total_time *= 1000  # change it to ms
+        # total_time = int(total_time)
+        total_time = "{:.5f}".format(total_time)  # for floating point
+        return reply_packet, address, total_time
+
+
 # test--->
-dst = "8.8.8.8"
-packet_id = os.getpid() + int(random.randint(1, 1000))
-packet = crate_packet(packet_id, packet_size=18)
-udp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
-udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, 4)
-send_one_icmp_packet(dst, packet, udp_socket)
-recvPacket, addr = udp_socket.recvfrom(1024)
-print(recvPacket)
-print(addr)
+def traceroute_use_icmp(dst, timeout=1, port_number=0):
+    address = ()
+    prv_address = ("0.0.0.0", port_number)
+    rcv_packet = None
+    total_time = -float('inf')
+    ip = socket.gethostbyname(dst)
+    tries = 0
+    print(f"traceroute use ICMP for {ip}")
+    for ttl in range(1, ICMP_MAX_HOP):
+        for tries in range(ICMP_TRIES):
+            packet_id = os.getpid() + int(random.randint(1, 1000))
+            packet = crate_packet(packet_id, packet_size=18)
+            udp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
+            try:
+                udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, ttl)
+                send_time = send_one_icmp_packet(ip, packet, udp_socket, port_number)
+                rcv_packet, address, total_time = receive_one_icmp_packet(udp_socket, send_time, timeout)
+                if address[0]:
+                    break
+
+            except socket.error as e:
+                print(e)
+            except TypeError:
+                continue
+            finally:
+                udp_socket.close()
+        if prv_address[0] != "0.0.0.0":
+            if tries + 1 == ICMP_TRIES and prv_address[0] == address[0]:
+                print(f"NO REPLY after {tries + 1} tries.")
+                continue
+        prv_address = address
+        if ttl == 1:
+            print(f"HOP<{ttl}> <==> GATEWAY<{address[0]}> in {total_time} after {tries + 1} tries.")
+            continue
+        if address[0] == ip:
+            print(f"HOP<{ttl}> <==> DESTINATION<{address[0]}> in {total_time} after {tries + 1} tries.")
+            return
+        print(f"HOP<{ttl}> <==> <{address[0]}> in {total_time} after {tries + 1} tries.")
+
+
+traceroute_use_icmp("google.com")
