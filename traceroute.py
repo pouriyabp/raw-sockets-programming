@@ -6,12 +6,29 @@ import os
 import time
 import select
 
+
+class TextColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[31m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[m'
+    YELLOW = '\033[93m'
+    ORANGE = '\033[91m'
+    PURPLE = '\033[35m'
+
+
 # ======================================================================================================================
 # ICMP protocol
 
 
 ICMP_ECHO_REQUEST = 8
-ICMP_MAX_HOP = 50  # maximum hop that we go.
+ICMP_MAX_HOP = 30  # maximum hop that we go.
 ICMP_TRIES = 3  # default tries for each hop.
 
 
@@ -114,7 +131,8 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
     total_time = -float('inf')
     ip = socket.gethostbyname(dst)
     tries = 0
-    print(f"traceroute use ICMP for {ip}")
+    print(
+        f"traceroute {TextColors.BOLD}{TextColors.ORANGE}<{ip}>{TextColors.RESET} use {TextColors.BOLD}ICMP{TextColors.RESET}:")
     for ttl in range(start_ttl, max_ttl):
         for tries in range(max_tries):
             packet_id = os.getpid() + int(random.randint(1, 1000))
@@ -135,16 +153,20 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
                 udp_socket.close()
         if prv_address[0] != "0.0.0.0":
             if tries + 1 == ICMP_TRIES and prv_address[0] == address[0]:
-                print(f"NO REPLY after {tries + 1} tries.")
+                print(
+                    f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> NO REPLY after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
                 continue
         prv_address = address
         if ttl == 1:
-            print(f"HOP<{ttl}> <==> GATEWAY<{address[0]}> in {total_time} after {tries + 1} tries.")
+            print(
+                f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> GATEWAY<{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
             continue
         if address[0] == ip:
-            print(f"HOP<{ttl}> <==> DESTINATION<{address[0]}> in {total_time} after {tries + 1} tries.")
+            print(
+                f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> DESTINATION<{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
             return
-        print(f"HOP<{ttl}> <==> <{address[0]}> in {total_time} after {tries + 1} tries.")
+        print(
+            f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> <{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
 
 
 traceroute_use_icmp("google.com")
