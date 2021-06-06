@@ -106,7 +106,8 @@ def receive_one_icmp_packet(udp_socket, send_time, timeout):
 
 
 # test--->
-def traceroute_use_icmp(dst, timeout=1, port_number=0):
+def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP_MAX_HOP, max_tries=ICMP_TRIES,
+                        packet_size=18):
     address = ()
     prv_address = ("0.0.0.0", port_number)
     rcv_packet = None
@@ -114,10 +115,10 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0):
     ip = socket.gethostbyname(dst)
     tries = 0
     print(f"traceroute use ICMP for {ip}")
-    for ttl in range(1, ICMP_MAX_HOP):
-        for tries in range(ICMP_TRIES):
+    for ttl in range(start_ttl, max_ttl):
+        for tries in range(max_tries):
             packet_id = os.getpid() + int(random.randint(1, 1000))
-            packet = crate_packet(packet_id, packet_size=18)
+            packet = crate_packet(packet_id, packet_size=packet_size)
             udp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
             try:
                 udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, ttl)
