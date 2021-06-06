@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import select
+import argparse
 
 
 class TextColors:
@@ -122,7 +123,8 @@ def receive_one_icmp_packet(udp_socket, send_time, timeout):
         return reply_packet, address, total_time
 
 
-# test--->
+# function that send one icmp packet each time.
+# TODO try to send 3 icmp pakcet each time.
 def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP_MAX_HOP, max_tries=ICMP_TRIES,
                         packet_size=18):
     address = ()
@@ -169,4 +171,42 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
             f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> <{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
 
 
-traceroute_use_icmp("google.com")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=" *traceroute* ")
+    parser.add_argument("host", help="The host that you want trace.", type=str)
+    parser.add_argument("-t", "--timeout", help="timeout for each ping reply (default is 1 second).", type=float)
+    parser.add_argument("-s", "--size",
+                        help="size of payload part of each ICMP request packet (default payload is 18).",
+                        type=int)
+    parser.add_argument("-l", "--maxHop", help="the max hop or max TTL.", type=int)
+    parser.add_argument("-f", "--startTTL", help="the number of TTL that we start trace with it.", type=int)
+    parser.add_argument("-e", "--tries", help="the number of tries for each TTL.", type=int)
+    parser.add_argument("-p", "--port", help="the port number that send packet.", type=int)
+    parser.add_argument("mode", help="choose mode like TCP or UDP or ICMP", type=str)
+    args = parser.parse_args()
+
+    host = args.host
+    mode = args.mode
+    timeout = args.timeout
+    packet_size = args.size
+    max_hop = args.maxHop
+    start_TTL = args.startTTL
+    tries_for_each_TTL = args.tries
+    send_port = args.port
+    if timeout is None:
+        timeout = 1
+    if packet_size is None:
+        packet_size = 18
+    if max_hop is None:
+        if mode == "ICMP":
+            max_hop = ICMP_MAX_HOP
+    if start_TTL is None:
+        start_TTL = 1
+    if tries_for_each_TTL is None:
+        if mode == "ICMP":
+            tries_for_each_TTL = ICMP_TRIES
+    if send_port is None:
+        send_port = 0
+
+    if mode == "ICMP":
+        traceroute_use_icmp(host, timeout, send_port, start_TTL, max_hop, tries_for_each_TTL, packet_size)
