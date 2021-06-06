@@ -210,7 +210,7 @@ def main():
     parser.add_argument("-f", "--startTTL", help="the number of TTL that we start trace with it.", type=int)
     parser.add_argument("-e", "--tries", help="the number of tries for each TTL.", type=int)
     parser.add_argument("-p", "--port", help="the port number that send packet.", type=int)
-    parser.add_argument("mode", help="choose mode: TCP, UDP or ICMP", type=str)
+    parser.add_argument("mode", help="choose mode: TCP, UDP or ICMP (for now use ICMP)", type=str)
     args = parser.parse_args()
 
     host = args.host
