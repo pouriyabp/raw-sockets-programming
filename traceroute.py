@@ -35,7 +35,7 @@ ICMP_TRIES = 3  # default tries for each hop.
 
 # crate ICMP packet with this function
 # default packet size is 60 byte.
-def crate_packet(identifier, sequence_number=1, packet_size=18):  # default packet size is 18 byte.
+def crate_icmp_packet(identifier, sequence_number=1, packet_size=18):  # default packet size is 18 byte.
     # Maximum for an unsigned short int c object counts to 65535(0xFFFF). we have to sure that our packet id is not
     # greater than that.
     identifier = identifier & 0xFFFF
@@ -138,7 +138,7 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
     for ttl in range(start_ttl, max_ttl):
         for tries in range(max_tries):
             packet_id = os.getpid() + int(random.randint(1, 1000))
-            packet = crate_packet(packet_id, packet_size=packet_size)
+            packet = crate_icmp_packet(packet_id, packet_size=packet_size)
             udp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
             try:
                 udp_socket.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, ttl)
@@ -171,7 +171,35 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
             f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> <{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
 
 
-if __name__ == "__main__":
+# ======================================================================================================================
+# TCP protocol
+def crate_tcp_packet(source_port, dst_port, seq_number, ack_number, flags, window_size, urgent_pointer,
+                     packet_size=0):  # default packet size is 18 byte.
+    # TODO calculate header length
+    header_len = 88 & 0xff
+    flags = flags & 0xff
+    flags_and_header_length = header_len | flags
+    print(flags_and_header_length)
+    # checksum is 0 for now
+    checksum = 0
+    # Header is src port (16), dst port (16), seq number (32), ack number (32), flags and header length (16),
+    # window size (16), checksum (16), urgent pointer(16)
+    header = struct.pack('!HHLLBBHHH', source_port, dst_port, seq_number, ack_number, header_len, flags, window_size,
+                         checksum, urgent_pointer)
+    # Payload Generation
+    payload_byte = []
+    if packet_size > 0:
+        for i in range(0x42, 0x42 + packet_size):  # 0x42 = 66 decimal
+            payload_byte += [(i & 0xff)]  # Keep chars in the 0-255 range
+    data = bytes(payload_byte)
+    checksum = calculate_checksum(header + data)
+    header = struct.pack('!HHLLBBHHH', source_port, dst_port, seq_number, ack_number, header_len, flags, window_size,
+                         checksum, urgent_pointer)
+    packet = header + data
+    return packet
+
+
+def main():
     parser = argparse.ArgumentParser(description=" *traceroute* ")
     parser.add_argument("host", help="The host that you want trace.", type=str)
     parser.add_argument("-t", "--timeout", help="timeout for each ping reply (default is 1 second).", type=float)
@@ -182,7 +210,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--startTTL", help="the number of TTL that we start trace with it.", type=int)
     parser.add_argument("-e", "--tries", help="the number of tries for each TTL.", type=int)
     parser.add_argument("-p", "--port", help="the port number that send packet.", type=int)
-    parser.add_argument("mode", help="choose mode like TCP or UDP or ICMP", type=str)
+    parser.add_argument("mode", help="choose mode: TCP, UDP or ICMP", type=str)
     args = parser.parse_args()
 
     host = args.host
@@ -210,3 +238,13 @@ if __name__ == "__main__":
 
     if mode == "ICMP":
         traceroute_use_icmp(host, timeout, send_port, start_TTL, max_hop, tries_for_each_TTL, packet_size)
+
+
+if __name__ == "__main__":
+    main()
+    # packet = crate_tcp_packet(4252, 4242, 1, 0, 2, 200, 0)
+    # mySocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+    # mySocket.sendto(packet, ("8.8.8.8", 4242))
+    # reply_packet, address = mySocket.recvfrom(2048)
+    # print(reply_packet)
+    # print(address)
