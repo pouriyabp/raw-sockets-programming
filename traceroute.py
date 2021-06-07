@@ -154,7 +154,7 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
             finally:
                 udp_socket.close()
         if prv_address[0] != "0.0.0.0":
-            if tries + 1 == ICMP_TRIES and prv_address[0] == address[0]:
+            if tries + 1 == max_tries and prv_address[0] == address[0]:
                 print(
                     f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> NO REPLY after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
                 continue
