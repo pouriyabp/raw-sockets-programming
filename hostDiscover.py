@@ -44,6 +44,9 @@ PROTOCOL_TYPE = 0X0800  # This field specifies the internetwork protocol for whi
 HARDWARE_ADDRESS_LENGTH = 0X06  # Ethernet address length is 6 (6*8=48).
 PROTOCOL_ADDRESS_LENGTH = 0X04  # IPv4 address length is 4 (4*8=32)
 OPERATION = 0X0001  # Specifies the operation that the sender is performing: 1 for request, 2 for reply.
+ARP_TYPE = 0x0806  # ARP code protocol
+BROADCAST_MAC = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]  # broadcast address
+TARGET_MAC = [0, 0, 0, 0, 0, 0]
 
 
 # # only work in linux
@@ -86,59 +89,27 @@ def get_ip_address(interface):
     return result
 
 
-def crate_arp_request_packet(local_mac, local_ip, dst_mac, dst_ip):
-    # arp_packet = struct.pack('!HH'
-    #                          'BB'
-    #                          'H'
-    #                          'HHH'
-    #                          'HH'
-    #                          'HHH'
-    #                          'HH',
-    #                          HARDWARE_TYPE, PROTOCOL_TYPE,
-    #                          HARDWARE_ADDRESS_LENGTH,PROTOCOL_ADDRESS_LENGTH,
-    #                          OPERATION,
-    #                          hex(local_mac[0]), hex(local_mac[1]), hex(local_mac[2]),
-    #                          local_ip[0],local_ip[1],
-    #                          dst_mac[0], dst_mac[1], dst_mac[2],
-    #                          dst_ip[0], dst_ip[1]
-    #                          )
-    ARP_FRAME = [
-        struct.pack('!H', HARDWARE_TYPE),  # HRD
-        struct.pack('!H', PROTOCOL_TYPE),  # PRO
-        struct.pack('!B', HARDWARE_ADDRESS_LENGTH),  # HLN
-        struct.pack('!B', PROTOCOL_ADDRESS_LENGTH),  # PLN
-        struct.pack('!H', OPERATION),  # OP
-        struct.pack('!6B', *local_mac),  # SHA
-        struct.pack('!4B', *local_ip),  # SPA
-        struct.pack('!6B', *(0x00,) * 6),  # THA
-        struct.pack('!4B', *dst_ip),  # TPA
-    ]
-    return ARP_FRAME
+def crate_arp_request_frame(local_mac, local_ip, dst_ip):
+    packet = struct.pack("!6B6BHHHBBH6B4B6B4B", *BROADCAST_MAC, *local_mac, ARP_TYPE, HARDWARE_TYPE, PROTOCOL_TYPE,
+                         HARDWARE_ADDRESS_LENGTH, PROTOCOL_ADDRESS_LENGTH, OPERATION, *local_mac, *local_ip,
+                         *TARGET_MAC, *dst_ip)
+    return packet
 
 
-local_mac = get_mac_address('wlo1')
-local_ip = get_ip_address('wlo1')
-print(local_mac)
-print(local_ip)
-dst_mac = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-dst_ip = [10, 10, 24, 1]
-local_ip = [0x0a, 0x0a, 0x18, 0xf7]
-packet = crate_arp_request_packet(local_mac, local_ip, dst_mac, dst_ip)
-print(packet)
 s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
 s.bind(("wlo1", socket.SOCK_RAW))
-str = "  \x0a \x0a \x18 \xef"
-# packet = struct.pack("!2B2B2B6B4B6B4B", *str)
-brdCastMac = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-hostMac = [0xc0, 0xf8, 0xda, 0x05, 0x9b, 0x74]
-src_ip = [0x0a, 0x0a, 0x18, 0xf7]
-dst_mac = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+local_mac = get_mac_address('wlo1')
+local_ip = get_ip_address('wlo1')
+local_ip = [int(x) for x in local_ip]
 dst_ip = [0x0a, 0x0a, 0x18, 0xef]
-ARP_TYPE = 0x0806
-packtet = struct.pack("!6B6BHHHBBH6B4B6B4B", *brdCastMac, *hostMac, ARP_TYPE, HARDWARE_TYPE, PROTOCOL_TYPE,
-                      HARDWARE_ADDRESS_LENGTH, PROTOCOL_ADDRESS_LENGTH, OPERATION, *hostMac, *src_ip, *dst_mac, *dst_ip)
-print(packtet)
-s.send(packtet)
+frame = crate_arp_request_frame(local_mac, local_ip, dst_ip)
+print(frame)
+s.send(frame)
+# ----------------------------------------------------------------------------------------------------------------------
+# hostMac = [0xc0, 0xf8, 0xda, 0x05, 0x9b, 0x74]
+# src_ip = [0x0a, 0x0a, 0x18, 0xf7]
+# dst_mac = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+# dst_ip = [int (x) for x in dst_ip]
 # from  struct import pack
 #
 # bcast_mac = pack('!6B', *(0xFF,)*6)
