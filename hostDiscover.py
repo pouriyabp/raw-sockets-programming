@@ -189,7 +189,10 @@ def find_range(network_address, broadcast_address):
     temp_address = network_address
     temp_address[3] = temp_address[3] + 1
     # print(temp_address)
-    list_of_ip_addresses.append(temp_address)
+
+    list_of_ip_addresses.append(tuple(temp_address))
+
+    print(list_of_ip_addresses)
     while True:
         if temp_address[3] + 1 < 256:
             temp_address[3] += 1
@@ -200,23 +203,34 @@ def find_range(network_address, broadcast_address):
             temp_address[2] = 0
             temp_address[3] = 0
             temp_address[1] += 1
-        if temp_address == broadcast_address:
+        if temp_address != broadcast_address:
+            list_of_ip_addresses.append(tuple(temp_address))
+        else:
             break
-        # print(temp_address)
-        list_of_ip_addresses.append(temp_address)
+    return list_of_ip_addresses
+
     # while temp_address != broadcast_address:
     #     if temp_address[3] + 1 < 256:
     #         temp_address[3] += 1
 
 
-net, brd = convert_ip_to_range('10.10.24.215/24')
-find_range(net, brd)
+def try_to_find(list_of_ip, NIC, timeout=1):
+    for ip in list_of_ip:
+        ip = list(ip)
+        mac, ip = find_host(NIC, ip, timeout)
+        if mac is not None and ip is not None:
+            print(print_result(mac, ip))
 
+
+net, brd = convert_ip_to_range('10.10.24.215/24')
+list_of_addr = find_range(net, brd)
+print(list_of_addr)
 interface = 'wlo1'
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
 dst_ip = [10, 10, 24, 244]
 mac, ip = find_host(interface, dst_ip)
 print(print_result(mac, ip))
+try_to_find(list_of_addr, interface)
 # skip non-ARP packets
 # ethertype = ethernet_detailed[2]
 # if ethertype != (0x0806):
