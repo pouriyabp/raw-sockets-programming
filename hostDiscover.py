@@ -184,8 +184,34 @@ def convert_ip_to_range(ip_address_with_cidr):
     return network_address, boradcast_address
 
 
+def find_range(network_address, broadcast_address):
+    list_of_ip_addresses = []
+    temp_address = network_address
+    temp_address[3] = temp_address[3] + 1
+    # print(temp_address)
+    list_of_ip_addresses.append(temp_address)
+    while True:
+        if temp_address[3] + 1 < 256:
+            temp_address[3] += 1
+        elif temp_address[2] + 1 < 256:
+            temp_address[3] = 0
+            temp_address[2] += 1
+        elif temp_address[1] + 1 < 256:
+            temp_address[2] = 0
+            temp_address[3] = 0
+            temp_address[1] += 1
+        if temp_address == broadcast_address:
+            break
+        # print(temp_address)
+        list_of_ip_addresses.append(temp_address)
+    # while temp_address != broadcast_address:
+    #     if temp_address[3] + 1 < 256:
+    #         temp_address[3] += 1
 
-print(convert_ip_to_range('94.192.0.0/14'))
+
+net, brd = convert_ip_to_range('10.10.24.215/24')
+find_range(net, brd)
+
 interface = 'wlo1'
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
 dst_ip = [10, 10, 24, 244]
