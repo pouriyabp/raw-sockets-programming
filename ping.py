@@ -166,11 +166,11 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
     if address == '127.0.0.1':
         response = Response(address, reply_packet, rtt, pid, sequence)
         return response
-    if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
-        # second we check the header of reply packet:
-        if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
-            response = Response(address, reply_packet, rtt, pid, sequence)
-            return response
+    # if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
+    # second we check the header of reply packet:
+    if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
+        response = Response(address, reply_packet, rtt, pid, sequence)
+        return response
 
 
 def print_response(response):
