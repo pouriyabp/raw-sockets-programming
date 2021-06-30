@@ -2,6 +2,7 @@ import binascii
 import socket
 import string
 import struct
+import time
 import uuid
 import fcntl
 
@@ -44,7 +45,8 @@ PROTOCOL_TYPE = 0X0800  # This field specifies the internetwork protocol for whi
 # For IPv4, this has the value 0x0800 and for ARP, 0x0806
 HARDWARE_ADDRESS_LENGTH = 0X06  # Ethernet address length is 6 (6*8=48).
 PROTOCOL_ADDRESS_LENGTH = 0X04  # IPv4 address length is 4 (4*8=32)
-OPERATION = 0X0001  # Specifies the operation that the sender is performing: 1 for request, 2 for reply.
+OPERATION_REQUEST = 0X0001  # Specifies the operation that the sender is performing: 1 for request, 2 for reply.
+OPERATION_REPLAY = 0x0002
 ARP_TYPE = 0x0806  # ARP code protocol
 BROADCAST_MAC = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]  # broadcast address
 TARGET_MAC = [0, 0, 0, 0, 0, 0]
@@ -92,84 +94,91 @@ def get_ip_address(interface):
 
 def crate_arp_request_frame(local_mac, local_ip, dst_ip):
     packet = struct.pack("!6B6BHHHBBH6B4B6B4B", *BROADCAST_MAC, *local_mac, ARP_TYPE, HARDWARE_TYPE, PROTOCOL_TYPE,
-                         HARDWARE_ADDRESS_LENGTH, PROTOCOL_ADDRESS_LENGTH, OPERATION, *local_mac, *local_ip,
+                         HARDWARE_ADDRESS_LENGTH, PROTOCOL_ADDRESS_LENGTH, OPERATION_REQUEST, *local_mac, *local_ip,
                          *TARGET_MAC, *dst_ip)
     return packet
 
 
-interface = 'wlo1'
-s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-s.bind((interface, socket.SOCK_RAW))
-local_mac = get_mac_address(interface)
-print(local_mac)
-local_ip = get_ip_address(interface)
-local_ip = [int(x) for x in local_ip]
-# dst_ip = [0x0a, 0x0a, 0x18, 0xef]
-dst_ip = [10, 10, 24, 1]
-frame = crate_arp_request_frame(local_mac, local_ip, dst_ip)
-print(frame)
-s.send(frame)
+def find_host(nic, dst_ip, timeout=1):
+    interface = nic
+    local_mac = get_mac_address(interface)
+    local_ip = get_ip_address(interface)
+    local_ip = [int(x) for x in local_ip]
+    s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+    s.bind((interface, socket.SOCK_RAW))
+    frame = crate_arp_request_frame(local_mac, local_ip, dst_ip)
+    s.send(frame)
+    send_time = time.time()
+    # return send_time
+    mac, ip = recive_arp_frame(interface, send_time, timeout)
+    return mac, ip
 
-rawSocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
-import re
 
-while True:
-    packet = rawSocket.recvfrom(2048)
-    ethernet_header = packet[0][0:14]
-    ethernet_data = struct.unpack("!6B6BH", ethernet_header)
-    dst_mac_address = ethernet_data[:6]
-    src_mac_address = ethernet_data[6:12]
-    frame_type = ethernet_data[12]
-
-    # dst_first_two_byte, dst_second_two_byte, dst_third_two_byte, src_first_two_byte, src_second_two_byte, \
-    # src_third_two_byte, frame_type = struct.unpack("!3H3HH", ethernet_header)
-
-    if hex(frame_type) == hex(ARP_TYPE):
-        if list(dst_mac_address) == local_mac:
-            arp_header = packet[0][14:42]
-            arp_detailed = struct.unpack("!HHBBH6B4B6B4B", arp_header)
-            print(arp_detailed)
-            arp_operation = arp_detailed[4]
-            print(arp_operation)
-            print(hex(arp_operation))
-            print(packet)
-            if hex(arp_detailed[4]) == hex(0x002):
-                arp_src_hardware_address = arp_detailed[5:11]
-                arp_src_protocol_address = arp_detailed[11:15]
-                arp_dst_hardware_address = arp_detailed[15:21]
-                arp_dst_protocol_address = arp_detailed[21:25]
-                print(arp_dst_hardware_address)
-                print(arp_src_hardware_address)
-                break
+def recive_arp_frame(nic, send_time, timeout=1):
+    interface = nic
+    local_mac = get_mac_address(interface)
+    local_ip = get_ip_address(interface)
+    local_ip = [int(x) for x in local_ip]
+    raw_socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+    while True:
+        receive_time = time.time()
+        if receive_time - send_time > timeout:
+            return None, None
+        packet = raw_socket.recvfrom(2048)
+        ethernet_header = packet[0][0:14]
+        ethernet_data = struct.unpack("!6B6BH", ethernet_header)
+        dst_mac_address = ethernet_data[:6]
+        src_mac_address = ethernet_data[6:12]
+        frame_type = ethernet_data[12]
+        if hex(frame_type) == hex(ARP_TYPE):
+            if list(dst_mac_address) == local_mac:
+                arp_header = packet[0][14:42]
+                arp_detailed = struct.unpack("!HHBBH6B4B6B4B", arp_header)
+                arp_operation = arp_detailed[4]
+                if hex(arp_operation) == hex(OPERATION_REPLAY):
+                    arp_src_hardware_address = arp_detailed[5:11]
+                    arp_src_protocol_address = arp_detailed[11:15]
+                    arp_dst_hardware_address = arp_detailed[15:21]
+                    arp_dst_protocol_address = arp_detailed[21:25]
+                    if list(arp_dst_hardware_address) == local_mac and list(arp_dst_protocol_address) == local_ip:
+                        receive_time = time.time()
+                        if receive_time - send_time > timeout:
+                            return None, None
+                        return arp_src_hardware_address, arp_src_protocol_address
+                else:
+                    continue
             else:
                 continue
         else:
             continue
-    else:
-        continue
 
-    # skip non-ARP packets
-    # ethertype = ethernet_detailed[2]
-    # if ethertype != (0x0806):
-    #     # print(bytes(ethertype))
-    #     continue
 
-    # print("****************_ETHERNET_FRAME_****************")
-    # print("Dest MAC:        ", binascii.hexlify(ethernet_detailed[0]))
-    # print("Source MAC:      ", binascii.hexlify(ethernet_detailed[1]))
-    # print("Type:            ", binascii.hexlify(ethertype))
-    # print("************************************************")
-    # print("******************_ARP_HEADER_******************")
-    # print("Hardware type:   ", binascii.hexlify(arp_detailed[0]))
-    # print("Protocol type:   ", binascii.hexlify(arp_detailed[1]))
-    # print("Hardware size:   ", binascii.hexlify(arp_detailed[2]))
-    # print("Protocol size:   ", binascii.hexlify(arp_detailed[3]))
-    # print("Opcode:          ", binascii.hexlify(arp_detailed[4]))
-    # print("Source MAC:      ", binascii.hexlify(arp_detailed[5]))
-    # print("Source IP:       ", socket.inet_ntoa(arp_detailed[6]))
-    # print("Dest MAC:        ", binascii.hexlify(arp_detailed[7]))
-    # print("Dest IP:         ", socket.inet_ntoa(arp_detailed[8]))
-    # print("*************************************************\n")
+interface = 'wlo1'
+# dst_ip = [0x0a, 0x0a, 0x18, 0xef]
+dst_ip = [10, 10, 24, 244]
+print(find_host(interface, dst_ip))
+# skip non-ARP packets
+# ethertype = ethernet_detailed[2]
+# if ethertype != (0x0806):
+#     # print(bytes(ethertype))
+#     continue
+
+# print("****************_ETHERNET_FRAME_****************")
+# print("Dest MAC:        ", binascii.hexlify(ethernet_detailed[0]))
+# print("Source MAC:      ", binascii.hexlify(ethernet_detailed[1]))
+# print("Type:            ", binascii.hexlify(ethertype))
+# print("************************************************")
+# print("******************_ARP_HEADER_******************")
+# print("Hardware type:   ", binascii.hexlify(arp_detailed[0]))
+# print("Protocol type:   ", binascii.hexlify(arp_detailed[1]))
+# print("Hardware size:   ", binascii.hexlify(arp_detailed[2]))
+# print("Protocol size:   ", binascii.hexlify(arp_detailed[3]))
+# print("Opcode:          ", binascii.hexlify(arp_detailed[4]))
+# print("Source MAC:      ", binascii.hexlify(arp_detailed[5]))
+# print("Source IP:       ", socket.inet_ntoa(arp_detailed[6]))
+# print("Dest MAC:        ", binascii.hexlify(arp_detailed[7]))
+# print("Dest IP:         ", socket.inet_ntoa(arp_detailed[8]))
+# print("*************************************************\n")
 # ----------------------------------------------------------------------------------------------------------------------
 # hostMac = [0xc0, 0xf8, 0xda, 0x05, 0x9b, 0x74]
 # src_ip = [0x0a, 0x0a, 0x18, 0xf7]
