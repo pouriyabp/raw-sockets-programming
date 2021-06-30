@@ -69,6 +69,22 @@ top1000FamousPorts = [1, 3, 6, 9, 13, 17, 19, 20, 21, 22, 23, 24, 25, 30, 32, 37
                       60443, 61532, 61900, 62078, 63331, 64623, 64680, 65000, 65129, 65389]
 
 
+class TextColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[31m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[m'
+    YELLOW = '\033[93m'
+    ORANGE = '\033[91m'
+    PURPLE = '\033[35m'
+
+
 # check port is open or not
 def checkPort(ip, port, output, printLock, timeout=None):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -162,11 +178,11 @@ def getThreadsNumber():
 
 
 def printResult(targetArry, outputDict):
-    print(60 * '*')
+    print(f"{TextColors.CYAN}{60 * '*'}{TextColors.RESET}")
     for port in targetArry:
         if outputDict[port] == 'open':
-            print(f"port {port} : OPEN")
-    print(60 * '*')
+            print(f"port {TextColors.ORANGE}{port}{TextColors.RESET} : {TextColors.ORANGE}OPEN{TextColors.RESET}")
+    print(f"{TextColors.CYAN}{60 * '*'}{TextColors.RESET}")
 
 
 # get server ip address
@@ -308,9 +324,9 @@ def main():
         targetPorts.append(temp)
     else:
         targetPorts = porseman
-    print(
-        f"server is {server}, timeout is {timeout}, threads number is {threadsNumber}, portDn = {portRangeDown}, "
-        f"portUp = {portRangeUp}, target port(s) is {targetPorts}")
+    # print(
+    #     f"server is {server}, timeout is {timeout}, threads number is {threadsNumber}, portDn = {portRangeDown}, "
+    #     f"portUp = {portRangeUp}, target port(s) is {targetPorts}")
 
     # ------------------------------------------------------------------------------------------------------------------
     server = fixServer(server)
@@ -327,14 +343,15 @@ def main():
     time.sleep(0.01)
 
     startThread(server, queue, output, printLock, threadsNumber, timeout)
-    print(targetPorts)
+    # print(targetPorts)
 
     while len(output) < len(targetPorts):
         time.sleep(0.01)
         continue
     endTime = time.time()
-    print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
-    print(output)
+    # print(f"start time is {startTime} and end time is {endTime} and ( end time - start time ) is {endTime - startTime}")
+    print(f"time = {endTime - startTime}")
+    # print(output)
     # printResult(targetPorts, output)
 
     if len(targetPorts) > 1:
