@@ -153,10 +153,23 @@ def recive_arp_frame(nic, send_time, timeout=1):
             continue
 
 
+def print_result(mac, ip):
+    ip = [str(x) for x in ip]
+    ip = ".".join(ip)
+    mac = [hex(x) for x in mac]
+    mac = ":".join(mac)
+    mac = mac.replace("0x", "")
+    mac = mac.split(":")
+    mac = [("0" + x if len(x) == 1 else "".join(x)) for x in mac]
+    mac = ":".join(mac)
+    return f"interface with {mac} MAC address have {ip} IP address."
+
+
 interface = 'wlo1'
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
-dst_ip = [10, 10, 24, 244]
-print(find_host(interface, dst_ip))
+dst_ip = [10, 10, 24, 1]
+mac, ip = find_host(interface, dst_ip)
+print(print_result(mac, ip))
 # skip non-ARP packets
 # ethertype = ethernet_detailed[2]
 # if ethertype != (0x0806):
