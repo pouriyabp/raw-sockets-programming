@@ -1,5 +1,6 @@
 import binascii
 import ipaddress
+import select
 import socket
 import string
 import struct
@@ -122,8 +123,13 @@ def recive_arp_frame(nic, send_time, timeout=1):
     local_ip = [int(x) for x in local_ip]
     raw_socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
     while True:
-        receive_time = time.time()
-        if receive_time - send_time > timeout:
+        r_list, w_list, x_list = select.select([raw_socket], [], [], timeout)
+        start_time_for_receive = time.time()
+        total_time = start_time_for_receive - send_time
+        timeout = timeout - total_time
+        if not r_list:
+            return None, None
+        if timeout <= 0:
             return None, None
         packet = raw_socket.recvfrom(2048)
         ethernet_header = packet[0][0:14]
@@ -142,9 +148,6 @@ def recive_arp_frame(nic, send_time, timeout=1):
                     arp_dst_hardware_address = arp_detailed[15:21]
                     arp_dst_protocol_address = arp_detailed[21:25]
                     if list(arp_dst_hardware_address) == local_mac and list(arp_dst_protocol_address) == local_ip:
-                        receive_time = time.time()
-                        if receive_time - send_time > timeout:
-                            return None, None
                         return arp_src_hardware_address, arp_src_protocol_address
                 else:
                     continue
@@ -192,7 +195,6 @@ def find_range(network_address, broadcast_address):
 
     list_of_ip_addresses.append(tuple(temp_address))
 
-    print(list_of_ip_addresses)
     while True:
         if temp_address[3] + 1 < 256:
             temp_address[3] += 1
@@ -217,6 +219,7 @@ def find_range(network_address, broadcast_address):
 def try_to_find(list_of_ip, NIC, timeout=1):
     for ip in list_of_ip:
         ip = list(ip)
+        print(ip)
         mac, ip = find_host(NIC, ip, timeout)
         if mac is not None and ip is not None:
             print(print_result(mac, ip))
@@ -224,12 +227,10 @@ def try_to_find(list_of_ip, NIC, timeout=1):
 
 net, brd = convert_ip_to_range('10.10.24.215/24')
 list_of_addr = find_range(net, brd)
-print(list_of_addr)
 interface = 'wlo1'
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
 dst_ip = [10, 10, 24, 244]
 mac, ip = find_host(interface, dst_ip)
-print(print_result(mac, ip))
 try_to_find(list_of_addr, interface)
 # skip non-ARP packets
 # ethertype = ethernet_detailed[2]
