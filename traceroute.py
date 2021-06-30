@@ -137,6 +137,7 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
         f"traceroute {TextColors.BOLD}{TextColors.ORANGE}<{ip}>{TextColors.RESET} use {TextColors.BOLD}ICMP{TextColors.RESET}:")
     for ttl in range(start_ttl, max_ttl):
         for tries in range(max_tries):
+            rcv_packet = None
             packet_id = os.getpid() + int(random.randint(1, 1000))
             packet = crate_icmp_packet(packet_id, packet_size=packet_size)
             udp_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname('icmp'))
@@ -153,6 +154,9 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
                 continue
             finally:
                 udp_socket.close()
+        if rcv_packet is not None:
+            type_of_message, code, checksum, pid, sequence = struct.unpack('!BBHHH', rcv_packet[20:28])
+
         if prv_address[0] != "0.0.0.0":
             if tries + 1 == max_tries and prv_address[0] == address[0]:
                 print(
@@ -163,12 +167,13 @@ def traceroute_use_icmp(dst, timeout=1, port_number=0, start_ttl=1, max_ttl=ICMP
             print(
                 f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> GATEWAY<{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
             continue
-        if address[0] == ip:
+        if type_of_message == 0 or address[0] == ip:
             print(
                 f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> DESTINATION<{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
             return
-        print(
-            f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> <{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
+        elif type_of_message == 11 or type_of_message == 3:
+            print(
+                f"HOP<{TextColors.PURPLE}{ttl}{TextColors.RESET}> <==> <{TextColors.ORANGE}{address[0]}{TextColors.RESET}> in {TextColors.CYAN}{total_time}{TextColors.RESET} after {TextColors.ORANGE}{tries + 1}{TextColors.RESET} tries.")
 
 
 # ======================================================================================================================
