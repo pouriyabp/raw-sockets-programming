@@ -1,14 +1,10 @@
 import argparse
-import binascii
-import ipaddress
 import select
 import signal
 import socket
-import string
 import struct
 import sys
 import time
-import uuid
 import fcntl
 
 """
@@ -45,6 +41,7 @@ Octet offset 	0                               1
                 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 """
+
 HARDWARE_TYPE = 0X0001  # for Ethernet is 1 (use https://en.wikipedia.org/wiki/Address_Resolution_Protocol)
 PROTOCOL_TYPE = 0X0800  # This field specifies the internetwork protocol for which the ARP request is intended.
 # For IPv4, this has the value 0x0800 and for ARP, 0x0806
@@ -55,6 +52,25 @@ OPERATION_REPLAY = 0x0002
 ARP_TYPE = 0x0806  # ARP code protocol
 BROADCAST_MAC = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]  # broadcast address
 TARGET_MAC = [0, 0, 0, 0, 0, 0]
+# for signal handler
+ip_tries = []
+mac_found = []
+
+
+class TextColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[31m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[m'
+    YELLOW = '\033[93m'
+    ORANGE = '\033[91m'
+    PURPLE = '\033[35m'
 
 
 # # only work in linux
@@ -170,7 +186,8 @@ def print_result(mac, ip):
         mac = mac.split(":")
         mac = [("0" + x if len(x) == 1 else "".join(x)) for x in mac]
         mac = ":".join(mac)
-        return f"interface with {mac} MAC address have {ip} IP address."
+        return f"Interface with {TextColors.RED}{mac}{TextColors.RESET} MAC address " \
+               f"have {TextColors.CYAN}{ip}{TextColors.RESET} IP address."
     else:
         return
 
@@ -226,14 +243,19 @@ def try_to_find(list_of_ip, NIC, timeout=1):
 
         temp_ip = [str(x) for x in temp_ip]
         temp_ip = ".".join(temp_ip)
-        print(f"Try for {temp_ip}")
+        print(f"Try for {TextColors.PURPLE}{temp_ip}{TextColors.RESET}")
         mac, ip = find_host(NIC, ip, timeout)
+        ip_tries.append(temp_ip)
         if mac is not None and ip is not None:
             print(print_result(mac, ip))
+            mac_found.append(mac)
 
 
 # handle sigint
 def signal_handler(sig, frame):
+    print(
+        f"\n{TextColors.ORANGE}{len(ip_tries)}{TextColors.RESET} IP tries "
+        f"and {TextColors.GREEN}{len(mac_found)}{TextColors.RESET} host(s) found.")
     sys.exit(0)
 
 
