@@ -1,9 +1,12 @@
+import argparse
 import binascii
 import ipaddress
 import select
+import signal
 import socket
 import string
 import struct
+import sys
 import time
 import uuid
 import fcntl
@@ -219,19 +222,42 @@ def find_range(network_address, broadcast_address):
 def try_to_find(list_of_ip, NIC, timeout=1):
     for ip in list_of_ip:
         ip = list(ip)
-        print(ip)
+        temp_ip = ip
+
+        temp_ip = [str(x) for x in temp_ip]
+        temp_ip = ".".join(temp_ip)
+        print(f"Try for {temp_ip}")
         mac, ip = find_host(NIC, ip, timeout)
         if mac is not None and ip is not None:
             print(print_result(mac, ip))
 
 
-net, brd = convert_ip_to_range('10.10.24.215/24')
-list_of_addr = find_range(net, brd)
-interface = 'wlo1'
+# handle sigint
+def signal_handler(sig, frame):
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    parser = argparse.ArgumentParser(description=" *Discover hosts* ")
+    parser.add_argument("ip", help="enter ip with cidr(range of ip addresses that you want to check).", type=str)
+    parser.add_argument("nic", help="enter network interface card that you want to send arp frame form that.", type=str)
+    parser.add_argument("-t", "--timeout", help="timeout for each arp reply (default is 1 second).", type=float)
+    args = parser.parse_args()
+    ip = args.ip
+    timeout_for_response = args.timeout
+    if timeout_for_response is None:
+        timeout_for_response = 1
+    net, brd = convert_ip_to_range(ip)
+    list_of_addr = find_range(net, brd)
+    interface = args.nic
+    try_to_find(list_of_addr, interface, timeout_for_response)
+
+# ======================================================================================================================
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
-dst_ip = [10, 10, 24, 244]
-mac, ip = find_host(interface, dst_ip)
-try_to_find(list_of_addr, interface)
+# dst_ip = [10, 10, 24, 244]
+# mac, ip = find_host(interface, dst_ip)
+
 # skip non-ARP packets
 # ethertype = ethernet_detailed[2]
 # if ethertype != (0x0806):
