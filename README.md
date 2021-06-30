@@ -12,9 +12,59 @@
 `python3 portSniffer.py -h`
 ###### you can choose threads number and timeout for each port with -n and -t.
 ###### simple example:
-`$ python3 portSniffer.py www.google.com -t 2 -n 50 -p100`
+`$ python3 portSniffer.py www.google.com -t 2 -n 50 -p50`
+###### result:
+    server ip is 142.250.181.68
+    port 80 is open!
+    port 443 is open!
+    port 21 is close!
+    port 25 is close!
+    port 22 is close!
+    port 53 is close!
+    port 110 is close!
+    port 113 is close!
+    port 135 is close!
+    port 139 is close!
+    port 143 is close!
+    port 179 is close!
+    port 199 is close!
+    port 465 is close!
+    port 514 is close!
+    port 445 is close!
+    port 548 is close!
+    port 554 is close!
+    port 646 is close!
+    port 587 is close!
+    port 993 is close!
+    port 995 is close!
+    port 1025 is close!
+    port 1026 is close!
+    port 1433 is close!
+    port 1720 is close!
+    port 1723 is close!
+    port 3389 is close!
+    port 5060 is close!
+    port 2000 is close!
+    port 3306 is close!
+    port 5900 is close!
+    port 6001 is close!
+    port 8008 is close!
+    port 5666 is close!
+    port 8000 is close!
+    port 8080 is close!
+    port 49152 is close!
+    port 8443 is close!
+    port 32768 is close!
+    port 8888 is close!
+    port 10000 is close!
+    port 49154 is close!
+    time = 2.0583906173706055
+    ************************************************************
+    port 80 : OPEN
+    port 443 : OPEN
+    ************************************************************
 
-##phase2:  ping
+## phase2:  ping
 
 ##### ping one host or more parallel.
 - need root permission for run this code.
