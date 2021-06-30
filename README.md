@@ -1,7 +1,11 @@
 # Computer Network Project
 
-##phase1: port sniffer
-#####simple port scanner that use thread to scan and find open ports of one host.
+
+**computer network course**
+
+## phase1: port sniffer
+
+##### simple port scanner that use thread to scan and find open ports of one host.
 ###### how to use it:
 `$ python3 portSniffer.py HostName -r RangeofPorts`
 ###### use -h or --help for more information:
@@ -11,6 +15,7 @@
 `$ python3 portSniffer.py www.google.com -t 2 -n 50 -p100`
 
 ##phase2:  ping
+
 ##### ping one host or more parallel.
 - need root permission for run this code.
 - only work on Linux.
@@ -47,7 +52,8 @@
     For IP<4.2.2.4> <5> packet(s) sent and <5> packet(s) received, loss = 0.00% 
     MINIMUM RTT=<103.90949>ms, MAXIMUM RTT=<81.03633>ms
     
-##phase3:  traceroute
+## phase3:  traceroute
+
 ##### find hops between source and destination.
 - need root permission for run this code.
 - only work on Linux.
@@ -78,11 +84,13 @@
     HOP<19> <==> <142.251.48.1> in 89.30731 after 1 tries.
     HOP<20> <==> DESTINATION<8.8.8.8> in 71.86580 after 1 tries.
 
-##phase4:  discover hosts
+## phase4:  discover hosts
+
 ##### use arp frame to find up devise(s) in local network.
 - need root permission for run this code.
 - only work on Linux.
 - this code might not work on some linux (you can change two function that export ip and mac address of interface if it doesn't work).
+
 **you can find network interface in your host with `ip addr show` command.**
 ###### how to use it:
 `# python3 hostDiscover.py ip/CIDR network-interface`
@@ -92,4 +100,4 @@
 ###### simple example:
 `# python3 hostDiscover.py 10.10.24.1/24 wlo1`
 
-:black_square_button: TODO: make send frames parallel.
+:black_square_button: TODO: send frames parallel.
