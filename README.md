@@ -35,23 +35,23 @@
 ###### simple example:
 `# python3 traceroute.py 8.8.8.8 ICMP -t 1 -s 25 -l 40 -f 5 -e 4 -p 0`
 ###### result:
-traceroute <8.8.8.8> use ICMP:
-HOP<5> <==> <10.188.89.133> in 19.31143 after 1 tries.
-HOP<6> <==> NO REPLY after 4 tries.
-HOP<7> <==> <10.188.89.65> in 29.99926 after 1 tries.
-HOP<8> <==> NO REPLY after 4 tries.
-HOP<9> <==> <10.138.99.30> in 36.32927 after 1 tries.
-HOP<10> <==> <10.138.98.6> in 41.35251 after 1 tries.
-HOP<11> <==> <10.21.249.6> in 23.06533 after 1 tries.
-HOP<12> <==> <10.21.0.11> in 46.63014 after 1 tries.
-HOP<13> <==> <10.41.51.20> in 47.44816 after 1 tries.
-HOP<14> <==> <10.21.41.12> in 57.31082 after 1 tries.
-HOP<15> <==> <10.202.4.206> in 61.75208 after 1 tries.
-HOP<16> <==> <213.202.4.172> in 66.32495 after 1 tries.
-HOP<17> <==> <213.202.5.239> in 75.47593 after 1 tries.
-HOP<18> <==> <216.239.48.87> in 69.51118 after 1 tries.
-HOP<19> <==> <142.251.48.1> in 89.30731 after 1 tries.
-HOP<20> <==> DESTINATION<8.8.8.8> in 71.86580 after 1 tries.
+    traceroute <8.8.8.8> use ICMP:
+    HOP<5> <==> <10.188.89.133> in 19.31143 after 1 tries.
+    HOP<6> <==> NO REPLY after 4 tries.
+    HOP<7> <==> <10.188.89.65> in 29.99926 after 1 tries.
+    HOP<8> <==> NO REPLY after 4 tries.
+    HOP<9> <==> <10.138.99.30> in 36.32927 after 1 tries.
+    HOP<10> <==> <10.138.98.6> in 41.35251 after 1 tries.
+    HOP<11> <==> <10.21.249.6> in 23.06533 after 1 tries.
+    HOP<12> <==> <10.21.0.11> in 46.63014 after 1 tries.
+    HOP<13> <==> <10.41.51.20> in 47.44816 after 1 tries.
+    HOP<14> <==> <10.21.41.12> in 57.31082 after 1 tries.
+    HOP<15> <==> <10.202.4.206> in 61.75208 after 1 tries.
+    HOP<16> <==> <213.202.4.172> in 66.32495 after 1 tries.
+    HOP<17> <==> <213.202.5.239> in 75.47593 after 1 tries.
+    HOP<18> <==> <216.239.48.87> in 69.51118 after 1 tries.
+    HOP<19> <==> <142.251.48.1> in 89.30731 after 1 tries.
+    HOP<20> <==> DESTINATION<8.8.8.8> in 71.86580 after 1 tries.
 
 ##phase4:  discover hosts
 ##### use arp frame to find up devise(s) in local network.
@@ -66,4 +66,4 @@ HOP<20> <==> DESTINATION<8.8.8.8> in 71.86580 after 1 tries.
 ###### you can choose  timeout for each frame  with -t.
 ###### simple example:
 `# python3 hostDiscover.py 10.10.24.1/24 wlo1`
-:black_square_button: TODO: make send frames parallel.
+~:black_square_button: TODO: make send frames parallel.
