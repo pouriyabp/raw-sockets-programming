@@ -1,4 +1,5 @@
 import binascii
+import ipaddress
 import socket
 import string
 import struct
@@ -168,6 +169,23 @@ def print_result(mac, ip):
         return
 
 
+def convert_ip_to_range(ip_address_with_cidr):
+    address, cidr = ip_address_with_cidr.split('/')
+    address = [int(x) for x in address.split(".")]
+    cidr = int(cidr)
+    mask = [(((1 << 32) - 1) << (32 - cidr) >> i) & 255 for i in reversed(range(0, 32, 8))]
+    network_address = [address[i] & mask[i] for i in range(4)]
+    boradcast_address = [(address[i] & mask[i]) | (255 ^ mask[i]) for i in range(4)]
+    # print("Address: {0}".format('.'.join(map(str, address))))
+    # print("Mask: {0}".format('.'.join(map(str, mask))))
+    # print("Cidr: {0}".format(cidr))
+    # print("Network: {0}".format('.'.join(map(str, network_address))))
+    # print("Broadcast: {0}".format('.'.join(map(str, boradcast_address))))
+    return network_address, boradcast_address
+
+
+
+print(convert_ip_to_range('94.192.0.0/14'))
 interface = 'wlo1'
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
 dst_ip = [10, 10, 24, 244]
