@@ -149,5 +149,20 @@
 ###### you can choose  timeout for each frame  with -t.
 ###### simple example:
 `# python3 hostDiscover.py 10.10.24.1/24 wlo1`
-
+###### resutl:
+    Try for 10.10.24.1
+    Interface with 4c:5e:0c:05:00:06 MAC address have 10.10.24.1 IP address.
+    Try for 10.10.24.2
+    Try for 10.10.24.3
+    Try for 10.10.24.4
+    Try for 10.10.24.5
+    Try for 10.10.24.6
+    Try for 10.10.24.7
+    Try for 10.10.24.8
+    Try for 10.10.24.9
+    Try for 10.10.24.10
+    Try for 10.10.24.11
+    ^C
+    10 IP tries and 1 host(s) found.
+    
 :black_square_button: TODO: send frames parallel.
