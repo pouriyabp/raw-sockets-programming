@@ -101,6 +101,7 @@ interface = 'wlo1'
 s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
 s.bind((interface, socket.SOCK_RAW))
 local_mac = get_mac_address(interface)
+print(local_mac)
 local_ip = get_ip_address(interface)
 local_ip = [int(x) for x in local_ip]
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
@@ -109,40 +110,66 @@ frame = crate_arp_request_frame(local_mac, local_ip, dst_ip)
 print(frame)
 s.send(frame)
 
-rawSocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(0x0003))
+rawSocket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+import re
 
 while True:
-
     packet = rawSocket.recvfrom(2048)
-
     ethernet_header = packet[0][0:14]
-    ethernet_detailed = struct.unpack("!6s6s2s", ethernet_header)
+    ethernet_data = struct.unpack("!6B6BH", ethernet_header)
+    dst_mac_address = ethernet_data[:6]
+    src_mac_address = ethernet_data[6:12]
+    frame_type = ethernet_data[12]
 
-    arp_header = packet[0][14:42]
-    arp_detailed = struct.unpack("2s2s1s1s2s6s4s6s4s", arp_header)
+    # dst_first_two_byte, dst_second_two_byte, dst_third_two_byte, src_first_two_byte, src_second_two_byte, \
+    # src_third_two_byte, frame_type = struct.unpack("!3H3HH", ethernet_header)
+
+    if hex(frame_type) == hex(ARP_TYPE):
+        if list(dst_mac_address) == local_mac:
+            arp_header = packet[0][14:42]
+            arp_detailed = struct.unpack("!HHBBH6B4B6B4B", arp_header)
+            print(arp_detailed)
+            arp_operation = arp_detailed[4]
+            print(arp_operation)
+            print(hex(arp_operation))
+            print(packet)
+            if hex(arp_detailed[4]) == hex(0x002):
+                arp_src_hardware_address = arp_detailed[5:11]
+                arp_src_protocol_address = arp_detailed[11:15]
+                arp_dst_hardware_address = arp_detailed[15:21]
+                arp_dst_protocol_address = arp_detailed[21:25]
+                print(arp_dst_hardware_address)
+                print(arp_src_hardware_address)
+                break
+            else:
+                continue
+        else:
+            continue
+    else:
+        continue
 
     # skip non-ARP packets
-    ethertype = ethernet_detailed[2]
-    if ethertype != (0x0806):
-        print(bytes(ethertype))
-        continue
-    else:
-        print("****************_ETHERNET_FRAME_****************")
-        print("Dest MAC:        ", binascii.hexlify(ethernet_detailed[0]))
-        print("Source MAC:      ", binascii.hexlify(ethernet_detailed[1]))
-        print("Type:            ", binascii.hexlify(ethertype))
-        print("************************************************")
-        print("******************_ARP_HEADER_******************")
-        print("Hardware type:   ", binascii.hexlify(arp_detailed[0]))
-        print("Protocol type:   ", binascii.hexlify(arp_detailed[1]))
-        print("Hardware size:   ", binascii.hexlify(arp_detailed[2]))
-        print("Protocol size:   ", binascii.hexlify(arp_detailed[3]))
-        print("Opcode:          ", binascii.hexlify(arp_detailed[4]))
-        print("Source MAC:      ", binascii.hexlify(arp_detailed[5]))
-        print("Source IP:       ", socket.inet_ntoa(arp_detailed[6]))
-        print("Dest MAC:        ", binascii.hexlify(arp_detailed[7]))
-        print("Dest IP:         ", socket.inet_ntoa(arp_detailed[8]))
-        print("*************************************************\n")
+    # ethertype = ethernet_detailed[2]
+    # if ethertype != (0x0806):
+    #     # print(bytes(ethertype))
+    #     continue
+
+    # print("****************_ETHERNET_FRAME_****************")
+    # print("Dest MAC:        ", binascii.hexlify(ethernet_detailed[0]))
+    # print("Source MAC:      ", binascii.hexlify(ethernet_detailed[1]))
+    # print("Type:            ", binascii.hexlify(ethertype))
+    # print("************************************************")
+    # print("******************_ARP_HEADER_******************")
+    # print("Hardware type:   ", binascii.hexlify(arp_detailed[0]))
+    # print("Protocol type:   ", binascii.hexlify(arp_detailed[1]))
+    # print("Hardware size:   ", binascii.hexlify(arp_detailed[2]))
+    # print("Protocol size:   ", binascii.hexlify(arp_detailed[3]))
+    # print("Opcode:          ", binascii.hexlify(arp_detailed[4]))
+    # print("Source MAC:      ", binascii.hexlify(arp_detailed[5]))
+    # print("Source IP:       ", socket.inet_ntoa(arp_detailed[6]))
+    # print("Dest MAC:        ", binascii.hexlify(arp_detailed[7]))
+    # print("Dest IP:         ", socket.inet_ntoa(arp_detailed[8]))
+    # print("*************************************************\n")
 # ----------------------------------------------------------------------------------------------------------------------
 # hostMac = [0xc0, 0xf8, 0xda, 0x05, 0x9b, 0x74]
 # src_ip = [0x0a, 0x0a, 0x18, 0xf7]
