@@ -236,7 +236,7 @@ def find_range(network_address, broadcast_address):
     #         temp_address[3] += 1
 
 
-def try_to_find(list_of_ip, NIC, timeout=1):
+def send_to_ip_addresses(list_of_ip, NIC, timeout=1):
     for ip in list_of_ip:
         ip = list(ip)
         temp_ip = ip
@@ -249,6 +249,9 @@ def try_to_find(list_of_ip, NIC, timeout=1):
         if mac is not None and ip is not None:
             print(print_result(mac, ip))
             mac_found.append(mac)
+    print(
+        f"\n{TextColors.ORANGE}{len(ip_tries)}{TextColors.RESET} IP tries "
+        f"and {TextColors.GREEN}{len(mac_found)}{TextColors.RESET} host(s) found.")
 
 
 # handle sigint
@@ -273,7 +276,7 @@ if __name__ == "__main__":
     net, brd = convert_ip_to_range(ip)
     list_of_addr = find_range(net, brd)
     interface = args.nic
-    try_to_find(list_of_addr, interface, timeout_for_response)
+    send_to_ip_addresses(list_of_addr, interface, timeout_for_response)
 
 # ======================================================================================================================
 # dst_ip = [0x0a, 0x0a, 0x18, 0xef]
