@@ -120,7 +120,7 @@
     For IP<4.2.2.4> <5> packet(s) sent and <5> packet(s) received, loss = 0.00% 
     MINIMUM RTT=<62.58607>ms, MAXIMUM RTT=<119.86613>ms
 
-:black_square_button: TODO: optimization asyncio functions.
+:black_square_button: TODO: optimize functions that use asyncio.
 
 ## phase3:  traceroute
 
@@ -165,7 +165,9 @@
     HOP<20> <==> DESTINATION<8.8.8.8> in 71.86580 after 1 tries.
 
 :black_square_button: TODO: implement traceroute with tcp packet.
+
 :black_square_button: TODO: implement traceroute with udp packet.
+
 :black_square_button: TODO: send three packet parallel.
 
 ## phase4:  discover hosts
