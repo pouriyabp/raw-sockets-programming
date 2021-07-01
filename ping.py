@@ -49,12 +49,12 @@ class Response:
     def __init__(self, address, packet, rtt, pid, seq):
         self.address = address
         self.packet = packet
-        self.rtt = rtt
+        self.rtt = float(rtt)
         self.id = pid
         self.sequence = seq
 
     def __repr__(self):
-        return f"{self.sequence}"
+        return f"{self.sequence} and {self.rtt}"
         # return f"IP={self.address} RTT={self.rtt} seq={self.sequence}"
 
 
