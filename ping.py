@@ -200,7 +200,7 @@ def calculate_statistics():
                 req_packets += 1
                 find = False
                 for res in ARRAY_OF_RESPONSE:
-                    if req.id == res.id and req.sequence == res.sequence and req.address == res.address:
+                    if  req.sequence == res.sequence and req.address == res.address:
                         sum_rtt += float(res.rtt)
                         find = True
                         break
