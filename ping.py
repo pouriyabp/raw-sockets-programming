@@ -168,7 +168,7 @@ def open_packet(reply_packet, identifier, sequence_number, rtt, address):
         return response
     # if calculate_checksum(reply_header + reply_packet[:20]) == checksum:
     # second we check the header of reply packet:
-    if type_of_message == 0 and code == 0 and pid == identifier and sequence == sequence_number:
+    if type_of_message == 0 and code == 0  and sequence == sequence_number:
         response = Response(address, reply_packet, rtt, pid, sequence)
         return response
 
